@@ -30,7 +30,7 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.0.1"
+__version__ = "0.1.1"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
@@ -397,7 +397,7 @@ class RTObject:
             new_virtuals_ids = []
             # Translate names into ids
             for new_virt in virtual_servers:
-                new_id = GetObjectId(new_virt)
+                new_id = self.GetObjectId(new_virt)
                 if new_id != None:
                     new_virtuals_ids.append(new_id)
 
@@ -411,7 +411,7 @@ class RTObject:
 
                 sql = "DELETE FROM EntityLink WHERE parent_entity_id = %d AND child_entity_id = %d" % (object_id,virt_id)
                 self.db_insert(sql)
-                virt_name = GetObjectName(virt_id)
+                virt_name = self.GetObjectName(virt_id)
                 logstring = "Removed virtual %s" % virt_name
                 self.InsertLog(object_id,logstring)
 
@@ -483,10 +483,10 @@ class RTObject:
         if result == None:
             sql = "INSERT INTO EntityLink (parent_entity_type, parent_entity_id, child_entity_type, child_entity_id) VALUES ('object',%d,'object',%d)" % (object_id, virtual_id)
             self.db_insert(sql)
-            text = "Linked virtual %s with hypervisor" % GetObjectName(virtual_id)
+            text = "Linked virtual %s with hypervisor" % self.GetObjectName(virtual_id)
             self.InsertLog(object_id,text)
 
-    def AssignChassisSlot(chassis_name,slot_number,server_name):
+    def AssignChassisSlot(self,chassis_name,slot_number,server_name):
         '''Assign server objects to server chassis'''
         chassis_id = self.GetObjectId(chassis_name)
         server_id = self.GetObjectId(server_name)
