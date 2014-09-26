@@ -234,6 +234,21 @@ class RTObject:
             getted_id = None
 
         return getted_id
+    
+    def GetAttributeValue(self,object_id,attr_id):
+        '''Search racktables database and get attribute values'''
+        sql = "SELECT string_value,uint_value,float_value FROM AttributeValue WHERE object_id = "+object_id+" AND attr_id = "+attr_id
+  
+        result = self.db_query_one(sql)
+
+        if result != None:
+            string_value = result[0]
+            uint_value = result[1]
+            float_value = result[2]
+        else:
+            getted_id = None
+
+        return [string_value, uint_value, float_value]
 
     # Interfaces methods
     def GetInterfaceName(self,object_id,interface_id):
