@@ -30,7 +30,7 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
@@ -157,6 +157,13 @@ class RTObject:
 
         return object_comment
 
+    def GetObjectTags(self,object_id):
+        '''Get object tags'''
+        sql = "SELECT t1.tag as parent_tag, t2.tag as tag FROM TagTree as t1 RIGHT JOIN TagTree as t2 ON t1.id = t2.parent_id WHERE t2.id IN (SELECT tag_id FROM TagStorage JOIN Object ON TagStorage.entity_id = Object.id WHERE TagStorage.entity_realm='object' and Object.id = '%d')" % (object_id)
+        result = self.db_query_all(sql)
+
+        return result
+
     def GetObjectId(self,name):
         '''Translate Object name to object id'''
         #Get interface id
@@ -237,18 +244,16 @@ class RTObject:
     
     def GetAttributeValue(self,object_id,attr_id):
         '''Search racktables database and get attribute values'''
-        sql = "SELECT string_value,uint_value,float_value FROM AttributeValue WHERE object_id = "+object_id+" AND attr_id = "+attr_id
+        sql = "SELECT string_value,uint_value,float_value FROM AttributeValue WHERE object_id = %d AND attr_id = %d" % (object_id, attr_id)
   
         result = self.db_query_one(sql)
 
         if result != None:
-            string_value = result[0]
-            uint_value = result[1]
-            float_value = result[2]
+            output = [result[0], result[1], result[2]]
         else:
-            getted_id = None
+            output = None
 
-        return [string_value, uint_value, float_value]
+        return output
 
     # Interfaces methods
     def GetInterfaceName(self,object_id,interface_id):
@@ -355,6 +360,14 @@ class RTObject:
                 is_there = "yes"
 
         if is_there == "no":
+            sql = "SELECT name FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
+            result = self.db_query_all(sql)
+
+            if result != None:
+                sql = "DELETE FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
+                self.db_insert(sql)
+                self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
+
             sql = "INSERT INTO IPv4Allocation (object_id,ip,name) VALUES (%d,INET_ATON('%s'),'%s')" % (object_id,ip,device)
             self.db_insert(sql)
             text = "Added IP %s on %s" % (ip,device)
@@ -380,6 +393,14 @@ class RTObject:
                 is_there = "yes"
 
         if is_there == "no":
+            sql = "SELECT name FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip)
+            result = self.db_query_all(sql)
+
+            if result != None:
+                sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip)
+                self.db_insert(sql)
+                self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
+
             sql = "INSERT INTO IPv6Allocation (object_id,ip,name) VALUES (%d,UNHEX('%s'),'%s')" % (object_id,ip6,device)
             self.db_insert(sql)
             text = "Added IPv6 IP %s on %s" % (ip,device)
@@ -398,6 +419,37 @@ class RTObject:
             getted_id = None
 
         return getted_id
+
+    def CleanUnusedInterfaces(self,object_id,interface_list):
+        '''Remove unused old interfaces'''
+        sql = "SELECT id, name FROM Port WHERE object_id = %d" % (object_id)
+        result = self.db_query_all(sql)
+
+        # Copy interface list becouse we need to change it
+        interfaces = interface_list[:]
+        # Add drac to interface list
+        interfaces.append("drac")
+
+        if result != None:
+            for row in result:
+                if row[1] not in interfaces:
+                    # Remove IPv4 allocation
+                    sql = "DELETE FROM IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, row[1])
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Removed IPv4 ips for %s" % row[1])
+                    # Remove IPv6 allocation
+                    sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, row[1])
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Removed IPv6 ips for %s" % row[1])
+                    # Remove port links
+                    sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (row[0], row[0])
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Remove port links %s" % row[1])
+                    # Remove port
+                    sql = "DELETE FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, row[1])
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Removed interface %s" % row[1])
+                    
 
     def CleanVirtuals(self,object_id,virtual_servers):
         '''Clean dead virtuals from hypervisor. virtual_servers is list of active virtual servers on hypervisor (object_id)'''
