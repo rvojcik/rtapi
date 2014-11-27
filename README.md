@@ -53,6 +53,9 @@ Class manual
      |  
      |  CleanIPv6Addresses(self, object_id, ip_addresses, device)
      |      Clean unused ipv6 from object. ip_addresses mus be list of active IP addresses on device (device) on host (object_id)
+     |
+     |  CleanUnusedInterfaces(self, object_id, interface_list)
+     |      Remove unused old interfaces
      |  
      |  CleanVirtuals(self, object_id, virtual_servers)
      |      Clean dead virtuals from hypervisor. virtual_servers is list of active virtual servers on hypervisor (object_id)
