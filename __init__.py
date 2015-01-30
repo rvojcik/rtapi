@@ -364,9 +364,10 @@ class RTObject:
             result = self.db_query_all(sql)
 
             if result != None:
-                sql = "DELETE FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
-                self.db_insert(sql)
-                self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
+                if result != ():
+                    sql = "DELETE FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
 
             sql = "INSERT INTO IPv4Allocation (object_id,ip,name) VALUES (%d,INET_ATON('%s'),'%s')" % (object_id,ip,device)
             self.db_insert(sql)
@@ -397,9 +398,10 @@ class RTObject:
             result = self.db_query_all(sql)
 
             if result != None:
-                sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip)
-                self.db_insert(sql)
-                self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
+                if result != ():
+                    sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip)
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
 
             sql = "INSERT INTO IPv6Allocation (object_id,ip,name) VALUES (%d,UNHEX('%s'),'%s')" % (object_id,ip6,device)
             self.db_insert(sql)
