@@ -408,7 +408,33 @@ class RTObject:
             text = "Added IPv6 IP %s on %s" % (ip,device)
             self.InsertLog(object_id,text)
 
+    def InterfaceAddMAC(self,object_id,interface,mac):
+        '''Add MAC address to interface'''
 
+        sql = "SELECT id,name,l2address FROM Port WHERE object_id = %d AND name = '%s' AND l2address = '%s'" % (object_id, interface,mac)
+        result = self.db_query_one(sql)
+
+        sql1 = "SELECT id,name,l2address FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, interface)
+        result1 = self.db_query_one(sql1)
+
+        print "Debug1:"
+        result
+        print "Debug2:"
+        result1
+        if result == None:
+            if result1 != None:
+                if mac == result1[2]:
+                    print "ROvnake adresy"
+                else:
+                    sql = "UPDATE Port SET l2address = '%s' WHERE object_id = %d AND name = '%s'" % (mac, object_id, interface)
+                    self.db_insert(sql)
+                    self.InsertLog(object_id,"Changed MAC address of %s from %s to %s" % (interface, result[2], mac))
+            else:
+                sql = "INSERT INTO Port (object_id,name,iif_id,type,l2address) VALUES (%d,'%s',1,24,'%s')" % (object_id,interface,mac)
+                self.db_insert(sql)
+                self.InsertLog(object_id,"Added MAC address of %s as %s" % (interface, mac))
+        else:
+            print "Vsetko ok, nemenim nic"
     
     def GetDictionaryId(self,searchstring):
         '''Search racktables dictionary using searchstring and return id of dictionary element'''
