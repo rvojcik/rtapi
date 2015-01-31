@@ -417,10 +417,6 @@ class RTObject:
         sql1 = "SELECT id,name,l2address FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, interface)
         result1 = self.db_query_one(sql1)
 
-        print "Debug1:"
-        result
-        print "Debug2:"
-        result1
         if result == None:
             if result1 != None:
                 if mac == result1[2]:
@@ -428,7 +424,7 @@ class RTObject:
                 else:
                     sql = "UPDATE Port SET l2address = '%s' WHERE object_id = %d AND name = '%s'" % (mac, object_id, interface)
                     self.db_insert(sql)
-                    self.InsertLog(object_id,"Changed MAC address of %s from %s to %s" % (interface, result[2], mac))
+                    self.InsertLog(object_id,"Changed MAC address of %s from %s to %s" % (interface, result1[2], mac))
             else:
                 sql = "INSERT INTO Port (object_id,name,iif_id,type,l2address) VALUES (%d,'%s',1,24,'%s')" % (object_id,interface,mac)
                 self.db_insert(sql)
