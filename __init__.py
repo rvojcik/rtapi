@@ -337,6 +337,29 @@ class RTObject:
                         select_object = 'portb'
                     else:
                         select_object = 'porta'
+
+                    # Check and clean previous link (switch and port)
+                    sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                    result = self.db_query_one(sql)
+                    
+                    if result != None:
+                        # Get ports id of old link
+                        old_link_a, old_link_b = result
+                        old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
+                        old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
+
+                        # Clean switchport connection
+                        sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                        self.db_insert(sql)
+
+                        # Log message to both device
+                        text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
+                        self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
+                        self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
+
+                        
+
+                    # Check server interface, update or create new link
                     sql = "SELECT %s FROM Link WHERE porta = %d OR portb = %d" % (select_object, port_id, port_id)
                     result = self.db_query_one(sql)
                     if result == None:
@@ -344,18 +367,33 @@ class RTObject:
                         sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (port_id, switch_port_id)
                         self.db_insert(sql)
                         resolution = True
+
+                        # Log it to both devices
+                        device_dict = self.GetPortDeviceNameById(port_id)
+                        switch_dict = self.GetPortDeviceNameById(switch_port_id)
+                        text = "New connection %s,%s with %s,%s" % (device_dict['device_name'], device_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
+                        self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
+                        self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
+
                     else:
                         #Update old connection
                         old_switch_port_id = result[0]
                         if old_switch_port_id != switch_port_id:
                             sql = "UPDATE Link set portb = %d, porta = %d WHERE porta = %d OR portb = %d" % (switch_port_id,port_id, port_id, port_id)
                             self.db_insert(sql)
-                            sql = "SELECT Port.name as port_name, Object.name as obj_name FROM Port INNER JOIN Object ON Port.object_id = Object.id WHERE Port.id = %d" % old_switch_port_id
-                            result = self.db_query_one(sql)
-                            old_switch_port, old_device_link = result
+                            
+                            # Log all three devices
+                            old_switch_dict = self.GetPortDeviceNameById(old_switch_port_id)
+                            switch_dict = self.GetPortDeviceNameById(switch_port_id)
+                            device_dict = self.GetPortDeviceNameById(port_id)
+                            text = "Update connection from %s,%s to %s,%s" % (old_switch_dict['device_name'], old_switch_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
+                            self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
 
-                            text = "Changed link from %s -> %s" % (old_device_link,old_switch_port)
-                            self.InsertLog(object_id,text)
+                            text = "%s,%s changed connection from %s,%s and connected to %s,%s" % (device_dict['device_name'], device_dict['port_name'], old_switch_dict['device_name'], old_switch_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
+                            self.InsertLog(self.GetObjectId(old_switch_dict['device_name']), text)
+                            self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
+                            
+    
                             resolution = True
                         resolution = None
 
