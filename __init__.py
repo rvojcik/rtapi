@@ -680,3 +680,19 @@ class RTObject:
         '''Get list of all server chassis IDs'''
         sql = "SELECT object_id FROM AttributeValue WHERE attr_id = 2 AND uint_value = 994"
         return self.db_query_all(sql)
+
+    # IPv4 Functions
+    def GetIP4Pools(self):
+        '''Get result list of IPv4 Pools'''
+
+        sql = "select INET_NTOA(ip), mask, name, comment, id from IPv4Network"
+        return self.db_query_all(sql)
+
+    # IPv6 Functions
+    def GetIP6Pools(self):
+        '''Get result list of IPv6 Pools'''
+
+        sql = "select HEX(ip), mask, name, comment, id from IPv6Network"
+        return self.db_query_all(sql)
+
+         
