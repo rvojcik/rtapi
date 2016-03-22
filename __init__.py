@@ -310,6 +310,19 @@ class RTObject:
 
         return port_id
 
+    def GetPortDeviceNameById(self,port_id):
+        '''Get Device name and Port Name by port ID, return dictionary device_name, port_name'''
+        
+        sql = "SELECT Port.name as port_name, Object.name as obj_name FROM Port INNER JOIN Object ON Port.object_id = Object.id WHERE Port.id = %d;" % (port_id)
+        result = self.db_query_one(sql);
+
+        if result == None:
+            return result
+        else:
+            port_name = result[0]
+            device_name = result[1]
+            return {'device_name': device_name, 'port_name': port_name}
+
     def LinkNetworkInterface(self,object_id,interface,switch_name,interface_switch):
         '''Link two devices togetger'''
         #Get interface id
