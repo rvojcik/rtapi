@@ -133,6 +133,18 @@ class RTObject:
 
         return object_name
     
+    def GetObjectNameByAsset(self,service_tag):
+        '''Translate Object AssetTag to Object Name'''
+        #Get interface id
+        sql = "SELECT name FROM Object WHERE asset_no = '%s'" % (service_tag)
+        result = self.db_query_one(sql)
+        if result != None:
+            object_name = result[0]
+        else:
+            object_name = None
+
+        return object_name
+
     def GetObjectLabel(self,object_id):
         '''Get object label'''
         #Get interface id
