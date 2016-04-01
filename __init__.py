@@ -338,32 +338,30 @@ class RTObject:
                     else:
                         select_object = 'porta'
 
-                    # Check and clean previous link (switch and port)
-                    sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
-                    result = self.db_query_one(sql)
-                    
-                    if result != None:
-                        # Get ports id of old link
-                        old_link_a, old_link_b = result
-                        old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
-                        old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
-
-                        # Clean switchport connection
-                        sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
-                        self.db_insert(sql)
-
-                        # Log message to both device
-                        text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
-                        self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
-                        self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
-
-                        
 
                     # Check server interface, update or create new link
                     sql = "SELECT %s FROM Link WHERE porta = %d OR portb = %d" % (select_object, port_id, port_id)
                     result = self.db_query_one(sql)
                     if result == None:
-                        #Insert new connection
+                        # Check if switch port is connected to another server
+                        sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                        result = self.db_query_one(sql)
+                        if result != None:
+                            # Get ports id of old link
+                            old_link_a, old_link_b = result
+                            old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
+                            old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
+
+                            # Clean switchport connection
+                            sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                            self.db_insert(sql)
+
+                            # Log message to both device
+                            text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
+                            self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
+                            self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
+
+                        # Insert new connection
                         sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (port_id, switch_port_id)
                         self.db_insert(sql)
                         resolution = True
@@ -379,7 +377,27 @@ class RTObject:
                         #Update old connection
                         old_switch_port_id = result[0]
                         if old_switch_port_id != switch_port_id:
-                            sql = "UPDATE Link set portb = %d, porta = %d WHERE porta = %d OR portb = %d" % (switch_port_id,port_id, port_id, port_id)
+                            # Clean previous link first
+                            # Check and clean previous link (switch and port)
+                            sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                            result = self.db_query_one(sql)
+                            if result != None:
+                                # Get ports id of old link
+                                old_link_a, old_link_b = result
+                                old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
+                                old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
+
+                                # Clean switchport connection
+                                sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                                self.db_insert(sql)
+
+                                # Log message to both device
+                                text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
+                                self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
+                                self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
+
+                            # Insert new connection
+                            sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (switch_port_id,port_id)
                             self.db_insert(sql)
                             
                             # Log all three devices
