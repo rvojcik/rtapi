@@ -36,7 +36,8 @@ Class manual
 
     CLASSES
         RTObject
-    
+
+
     class RTObject
      |  Ractables object. Require database object as argument.
      |  
@@ -45,7 +46,7 @@ Class manual
      |  AddObject(self, name, server_type_id, asset_no, label)
      |      Add new object to racktables
      |  
-     |  AssignChassisSlot(chassis_name, slot_number, server_name)
+     |  AssignChassisSlot(self, chassis_name, slot_number, server_name)
      |      Assign server objects to server chassis
      |  
      |  CleanIPAddresses(self, object_id, ip_addresses, device)
@@ -53,7 +54,7 @@ Class manual
      |  
      |  CleanIPv6Addresses(self, object_id, ip_addresses, device)
      |      Clean unused ipv6 from object. ip_addresses mus be list of active IP addresses on device (device) on host (object_id)
-     |
+     |  
      |  CleanUnusedInterfaces(self, object_id, interface_list)
      |      Remove unused old interfaces
      |  
@@ -66,8 +67,17 @@ Class manual
      |  GetAttributeId(self, searchstring)
      |      Search racktables database and get attribud id based on search string as argument
      |  
+     |  GetAttributeValue(self, object_id, attr_id)
+     |      Search racktables database and get attribute values
+     |  
      |  GetDictionaryId(self, searchstring)
      |      Search racktables dictionary using searchstring and return id of dictionary element
+     |  
+     |  GetIP4Pools(self)
+     |      Get result list of IPv4 Pools
+     |  
+     |  GetIP6Pools(self)
+     |      Get result list of IPv6 Pools
      |  
      |  GetInterfaceId(self, object_id, interface)
      |      Find id of specified interface
@@ -87,11 +97,20 @@ Class manual
      |  GetObjectName(self, object_id)
      |      Translate Object ID to Object Name
      |  
+     |  GetObjectNameByAsset(self, service_tag)
+     |      Translate Object AssetTag to Object Name
+     |  
+     |  GetObjectTags(self, object_id)
+     |      Get object tags
+     |  
+     |  GetPortDeviceNameById(self, port_id)
+     |      Get Device name and Port Name by port ID, return dictionary device_name, port_name
+     |  
      |  InsertAttribute(self, object_id, object_tid, attr_id, string_value, uint_value, name)
      |      Add or Update object attribute. 
      |      Require 6 arguments: object_id, object_tid, attr_id, string_value, uint_value, name
      |  
-     |  InsertLog(object_id, message)
+     |  InsertLog(self, object_id, message)
      |      Attach log message to specific object
      |  
      |  InterfaceAddIpv4IP(self, object_id, device, ip)
@@ -99,6 +118,9 @@ Class manual
      |  
      |  InterfaceAddIpv6IP(self, object_id, device, ip)
      |      Add/Update IPv6 IP on interface
+     |  
+     |  InterfaceAddMAC(self, object_id, interface, mac)
+     |      Add MAC address to interface
      |  
      |  LinkNetworkInterface(self, object_id, interface, switch_name, interface_switch)
      |      Link two devices togetger
