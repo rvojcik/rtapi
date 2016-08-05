@@ -30,7 +30,7 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
@@ -460,7 +460,7 @@ class RTObject:
         #Create address object using ipaddr 
         addr6 = ipaddr.IPAddress(ip)
         #Create IPv6 format for Mysql
-        ip6 = "".join(str(x) for x in addr6.exploded.split(':'))
+        ip6 = "".join(str(x) for x in addr6.exploded.split(':')).upper()
 
         sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
         result = self.db_query_all(sql)
@@ -471,16 +471,16 @@ class RTObject:
         is_there = "no"
 
         for old_ip in old_ips:
-            if old_ip[0] != ip6:
+            if old_ip[0] == ip6:
                 is_there = "yes"
 
         if is_there == "no":
-            sql = "SELECT name FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip)
+            sql = "SELECT name FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip6)
             result = self.db_query_all(sql)
 
             if result != None:
                 if result != ():
-                    sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip)
+                    sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip6)
                     self.db_insert(sql)
                     self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
 
@@ -520,6 +520,25 @@ class RTObject:
             getted_id = None
 
         return getted_id
+
+    def GetDictionaryValueById(self,dict_key):
+        '''Get value from Dictionary by ID reference'''
+        sql = "SELECT dict_value FROM Dictionary WHERE dict_key = %d " % (dict_key)
+
+        result = self.db_query_one(sql)
+        if result != None:
+            getted_id = result[0]
+        else:
+            getted_id = None
+
+        return getted_id
+        
+    
+    def InsertDictionaryValue(self, dict_id, value):
+        '''Insert value into dictionary identified by dict_id'''
+        sql="INSERT INTO Dictionary (chapter_id,dict_value) VALUES (%d, '%s')"% (dict_id,value)
+        self.db_insert(sql)
+
 
     def CleanUnusedInterfaces(self,object_id,interface_list):
         '''Remove unused old interfaces'''
