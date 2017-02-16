@@ -30,7 +30,7 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
@@ -372,7 +372,6 @@ class RTObject:
                         text = "New connection %s,%s with %s,%s" % (device_dict['device_name'], device_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
                         self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
                         self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
-
                     else:
                         #Update old connection
                         old_switch_port_id = result[0]
@@ -489,25 +488,7 @@ class RTObject:
             text = "Added IPv6 IP %s on %s" % (ip,device)
             self.InsertLog(object_id,text)
 
-    def InterfaceAddMAC(self,object_id,interface,mac):
-        '''Add MAC address to interface'''
 
-        sql = "SELECT id,name,l2address FROM Port WHERE object_id = %d AND name = '%s' AND l2address = '%s'" % (object_id, interface,mac)
-        result = self.db_query_one(sql)
-
-        sql1 = "SELECT id,name,l2address FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, interface)
-        result1 = self.db_query_one(sql1)
-
-        if result == None:
-            if result1 != None:
-                if mac != result1[2]:
-                    sql = "UPDATE Port SET l2address = '%s' WHERE object_id = %d AND name = '%s'" % (mac, object_id, interface)
-                    self.db_insert(sql)
-                    self.InsertLog(object_id,"Changed MAC address of %s from %s to %s" % (interface, result1[2], mac))
-            else:
-                sql = "INSERT INTO Port (object_id,name,iif_id,type,l2address) VALUES (%d,'%s',1,24,'%s')" % (object_id,interface,mac)
-                self.db_insert(sql)
-                self.InsertLog(object_id,"Added MAC address of %s as %s" % (interface, mac))
     
     def GetDictionaryId(self,searchstring):
         '''Search racktables dictionary using searchstring and return id of dictionary element'''
@@ -715,21 +696,5 @@ class RTObject:
 
     def GetAllServerChassisId(self):
         '''Get list of all server chassis IDs'''
-        sql = "SELECT object_id FROM AttributeValue WHERE attr_id = 2 AND uint_value = 994"
+        sql = "SELECT id FROM Object WHERE objtype_id = 1502"
         return self.db_query_all(sql)
-
-    # IPv4 Functions
-    def GetIP4Pools(self):
-        '''Get result list of IPv4 Pools'''
-
-        sql = "select INET_NTOA(ip), mask, name, comment, id from IPv4Network"
-        return self.db_query_all(sql)
-
-    # IPv6 Functions
-    def GetIP6Pools(self):
-        '''Get result list of IPv6 Pools'''
-
-        sql = "select HEX(ip), mask, name, comment, id from IPv6Network"
-        return self.db_query_all(sql)
-
-         
