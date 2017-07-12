@@ -660,11 +660,14 @@ class RTObject:
         server_id = self.GetObjectId(server_name)
         slot_attribute_id = self.GetAttributeId("Slot number")
 
-        try:
+        sql = "SELECT string_value FROM AttributeValue WHERE object_id = %d AND object_tid = 4 AND attr_id = %d" % (server_id, slot_attribute_id)
+        result = self.db_query_one(sql)
+
+        if result != None:
             # Try to update Value, if no success Insert new value
             sql = "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND object_tid = 4 AND attr_id = %d" % (slot_number, server_id, slot_attribute_id)
             self.db_insert(sql)
-        except:
+        else:
             # Assign slot number to server
             sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES ( %d, 4, %d, '%s')" % ( server_id, slot_attribute_id, slot_number)
             self.db_insert(sql)
