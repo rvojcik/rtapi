@@ -30,7 +30,7 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
@@ -660,12 +660,15 @@ class RTObject:
         server_id = self.GetObjectId(server_name)
         slot_attribute_id = self.GetAttributeId("Slot number")
 
-        # Assign slot number to server
-        sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES ( %d, 4, %d, '%s')" % ( server_id, slot_attribute_id, slot_number)
         try:
+            # Try to update Value, if no success Insert new value
+            sql = "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND object_tid = 4 AND attr_id = %d" % (slot_number, server_id, slot_attribute_id)
             self.db_insert(sql)
         except:
-            pass
+            # Assign slot number to server
+            sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES ( %d, 4, %d, '%s')" % ( server_id, slot_attribute_id, slot_number)
+            self.db_insert(sql)
+
 
         # Assign server to chassis
         # Check if it's connected
