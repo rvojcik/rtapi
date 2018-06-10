@@ -105,6 +105,7 @@ class RTObject:
         '''Add new object to racktables'''
         sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,'%s','%s')" % (name,server_type_id,asset_no,label)
         self.db_insert(sql)
+        return self.db_fetch_lastid()
 
     def UpdateObjectLabel(self,object_id,label):
         '''Update label on object'''
@@ -256,6 +257,19 @@ class RTObject:
     def GetAttributeId(self,searchstring):
         '''Search racktables database and get attribud id based on search string as argument'''
         sql = "SELECT id FROM Attribute WHERE name LIKE '%"+searchstring+"%'"
+  
+        result = self.db_query_one(sql)
+
+        if result != None:
+            getted_id = result[0]
+        else:
+            getted_id = None
+
+        return getted_id
+
+    def GetAttributeIdByName(self,attr_name):
+        '''Get the ID of an attribute by its EXACT name'''
+        sql = "SELECT id FROM Attribute WHERE name = '%s'" % (attr_name)
   
         result = self.db_query_one(sql)
 
