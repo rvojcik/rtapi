@@ -515,7 +515,7 @@ class RTObject:
         return getted_id
 
     def GetDictionaryIdByValue(self,dict_value):
-        '''Get the ID of a dictionary entry by its EXACT value - this is also case sensitiv'''
+        '''Get the ID of a dictionary entry by its EXACT value'''
         sql = "SELECT dict_key FROM Dictionary WHERE dict_value = '%s'" % (dict_value)
 
         result = self.db_query_one(sql)
