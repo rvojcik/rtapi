@@ -144,6 +144,18 @@ class RTObject:
             object_name = None
 
         return object_name
+    
+    def GetObjectIdByAsset(self,service_tag):
+        '''Get Object ID by Asset Tag'''
+        
+        sql = "SELECT id FROM Object WHERE asset_no = '%s'" % (service_tag)
+        result = self.db_query_one(sql)
+        if result != None:
+            object_id = result[0]
+        else:
+            object_id = None
+
+        return object_id
 
     def GetObjectLabel(self,object_id):
         '''Get object label'''
