@@ -698,6 +698,48 @@ class RTObject:
                 virt_name = self.GetObjectName(virt_id)
                 logstring = "Removed virtual %s" % virt_name
                 self.InsertLog(object_id,logstring)
+    def FindIPFromComment(self,comment,network_name):
+        '''Find IP address based on comment'''
+        # Get Network information
+        sql = "SELECT ip,mask from IPv4Network WHERE name = '%s'" % (network_name)
+        result = self.db_query_one(sql)
+
+        if result != None:
+            ip_int = result[0]
+            ip_mask = result[1]
+            ip_int_max = (2 ** (32 - ip_mask)) + ip_int
+
+            sql = "SELECT INET_NTOA(ip) FROM IPv4Address WHERE ip >= %d AND ip <= %d and comment = '%s'" % (ip_int, ip_int_max, comment)
+
+            result = self.db_query_all(sql)
+            if result != None:
+                return "\n".join(str(x[0])+"/"+str(ip_mask) for x in result)
+            else:
+                return False
+
+        else:
+            return False
+
+    def FindIPv6FromComment(self,comment,network_name):
+        '''Find IP address based on comment'''
+        sql = "SELECT HEX(ip),mask,hex(last_ip) from IPv6Network WHERE name = '%s'" % (network_name)
+        result = self.db_query_one(sql)
+
+        if result != None:
+            ip = result[0]
+            ip_mask = result[1]
+            ip_max = result[2]
+
+            sql = "select HEX(ip) from IPv6Address where ip between UNHEX('%s') AND UNHEX('%s') AND comment = '%s';" % (ip, ip_max, comment)
+
+            result = self.db_query_all(sql)
+            if result != None:
+                return "\n".join(str(re.sub(r'(.{4})(?=.)', r'\1:', x[0]).lower())+"/"+str(ip_mask) for x in result)
+            else:
+                return False
+
+        else:
+            return False
 
     def CleanIPAddresses(self,object_id,ip_addresses,device):
         '''Clean unused ip from object. ip addresses is list of IP addresses configured on device (device) on host (object_id)'''
