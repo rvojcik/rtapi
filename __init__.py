@@ -36,7 +36,6 @@ __license__ = "GPLv2"
 
 __all__ = ["RTObject"]
 
-
 import re
 import ipaddr
 
@@ -105,6 +104,7 @@ class RTObject:
         '''Add new object to racktables'''
         sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,'%s','%s')" % (name,server_type_id,asset_no,label)
         self.db_insert(sql)
+        return self.db_fetch_lastid()
 
     def UpdateObjectLabel(self,object_id,label):
         '''Update label on object'''
@@ -144,6 +144,18 @@ class RTObject:
             object_name = None
 
         return object_name
+    
+    def GetObjectIdByAsset(self,service_tag):
+        '''Get Object ID by Asset Tag'''
+        
+        sql = "SELECT id FROM Object WHERE asset_no = '%s'" % (service_tag)
+        result = self.db_query_one(sql)
+        if result != None:
+            object_id = result[0]
+        else:
+            object_id = None
+
+        return object_id
 
     def GetObjectLabel(self,object_id):
         '''Get object label'''
@@ -194,7 +206,85 @@ class RTObject:
         sql = "INSERT INTO ObjectLog (object_id,user,date,content) VALUES (%d,'script',now(),'%s')" % (object_id, message)
         self.db_insert(sql)
 
-    # Attrubute methods
+    # Attribute methods
+    def QueryTypedAttributeValue(self, object_id, attr_id, attr_type):
+        sql = "SELECT %s FROM AttributeValue WHERE object_id = %d AND attr_id = %d" % (attr_type, object_id, attr_id)
+        res = self.db_query_one(sql)
+
+        if(res is None):
+            return None
+        else:
+            return res[0]
+
+    def InsertOrUpdateStringAttribute(self, object_id, objtype_id, attr_id, new_value):
+        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'string_value')
+        if(old_value is None):
+            # INSERT
+            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES (%d,%d,%d,'%s')" % (object_id, objtype_id, attr_id, new_value)
+        else:
+            # UPDATE
+            return "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
+
+    def InsertOrUpdateUintAttribute(self, object_id, objtype_id, attr_id, new_value):
+        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'uint_value')
+        if(old_value is None):
+            # INSERT
+            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,uint_value) VALUES (%d,%d,%d,%d)" % (object_id, objtype_id, attr_id, new_value)
+        elif(old_value != new_value):
+            # UPDATE
+            return "UPDATE AttributeValue SET uint_value = %d WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
+
+    def InsertOrUpdateFloatAttribute(self, object_id, objtype_id, attr_id, new_value):
+        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'float_value')
+        if(old_value is None):
+            # INSERT
+            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,float_value) VALUES (%d,%d,%d,%f)" % (object_id, objtype_id, attr_id, new_value)
+        elif(old_value != new_value):
+            # UPDATE
+            return "UPDATE AttributeValue SET float_value = %f WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
+
+    def InsertOrUpdateAttribute_FunctionDispatcher(self, attr_type):
+        InsertOrUpdateAttribute_TypeFunctions = {
+            'uint': self.InsertOrUpdateUintAttribute,
+            'dict': self.InsertOrUpdateUintAttribute,
+            'float': self.InsertOrUpdateFloatAttribute,
+            'string': self.InsertOrUpdateStringAttribute,
+            'date': None
+        }
+        return InsertOrUpdateAttribute_TypeFunctions.get(attr_type)
+
+    def InsertOrUpdateAttribute(self, object_id, attr_id, new_value):
+        # Get the object type
+        sql = "SELECT objtype_id FROM object WHERE id = %d" % (object_id)
+        result = self.db_query_one(sql)
+
+        if(result is not None):
+            objtype_id = result[0]
+        else:
+            # Object not found in database - return None since we can not update an attribute on a non-existing object
+            return None
+
+        # Get the attribute type
+        sql = "SELECT type FROM attribute WHERE id = %d" % (attr_id)
+        result = self.db_query_one(sql)
+
+        if(result is not None):
+            attr_type = result[0]
+        else:
+            # Attribute with given ID does not exist - return None since the requested attribute does not exist
+            return None
+        
+        # Get the correct function for this attribute type
+        func = self.InsertOrUpdateAttribute_FunctionDispatcher(attr_type)
+        
+        # Get the SQL statement for Insert/Update
+        sql = func(object_id, objtype_id, attr_id, new_value)
+
+        # If there is nothing to update (eg. old_value == new_value) then the InsertOrUpdateAttribute_TypeFunction returns None and there is no SQL statement to execute
+        if(sql is not None):
+            self.db_insert(sql)
+
+
     def InsertAttribute(self,object_id,object_tid,attr_id,string_value,uint_value,name):
         '''Add or Update object attribute. 
         Require 6 arguments: object_id, object_tid, attr_id, string_value, uint_value, name'''
@@ -244,6 +334,19 @@ class RTObject:
     def GetAttributeId(self,searchstring):
         '''Search racktables database and get attribud id based on search string as argument'''
         sql = "SELECT id FROM Attribute WHERE name LIKE '%"+searchstring+"%'"
+  
+        result = self.db_query_one(sql)
+
+        if result != None:
+            getted_id = result[0]
+        else:
+            getted_id = None
+
+        return getted_id
+
+    def GetAttributeIdByName(self,attr_name):
+        '''Get the ID of an attribute by its EXACT name'''
+        sql = "SELECT id FROM Attribute WHERE name = '%s'" % (attr_name)
   
         result = self.db_query_one(sql)
 
@@ -502,6 +605,19 @@ class RTObject:
 
         return getted_id
 
+    def GetDictionaryIdByValue(self,dict_value):
+        '''Get the ID of a dictionary entry by its EXACT value'''
+        sql = "SELECT dict_key FROM Dictionary WHERE dict_value = '%s'" % (dict_value)
+
+        result = self.db_query_one(sql)
+        if result != None:
+            getted_id = result[0]
+        else:
+            getted_id = None
+
+        return getted_id
+
+
     def GetDictionaryValueById(self,dict_key):
         '''Get value from Dictionary by ID reference'''
         sql = "SELECT dict_value FROM Dictionary WHERE dict_key = %d " % (dict_key)
@@ -513,8 +629,8 @@ class RTObject:
             getted_id = None
 
         return getted_id
-        
-    
+
+   
     def InsertDictionaryValue(self, dict_id, value):
         '''Insert value into dictionary identified by dict_id'''
         sql="INSERT INTO Dictionary (chapter_id,dict_value) VALUES (%d, '%s')"% (dict_id,value)
