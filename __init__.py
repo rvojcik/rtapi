@@ -30,11 +30,12 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.1.6"
+__version__ = "0.2.0"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
 __all__ = ["RTObject"]
+
 
 import re
 import ipaddr
@@ -200,91 +201,82 @@ class RTObject:
 
         return object_id
 
+    def CheckIfIp4IPExists(self,ip):
+        '''Check if ipv4 record exist in database'''
+        sql = "select ip from IPv4Address where ip = INET_ATON('%s')" % (ip)
+        if self.db_query_one(sql) == None:
+            return False
+        else:
+            return True
+
+    def ListDockerContainersOfHost(self,docker_host):
+        '''List all Docker containers of specified host'''
+        sql = 'SELECT name FROM IPv4Address WHERE comment = "Docker host: %s"' % (docker_host)
+        return self.db_query_all(sql)
+
+    def AddDockerContainer(self,container_ip,container_name,docker_host):
+        '''Add new Docker container to racktables'''
+        self.InsertIPv4Log(container_ip,"Name set to " + container_name + ", comment set to Docker host: " + docker_host + "")
+        sql = "INSERT INTO IPv4Address (ip,name,comment,reserved) VALUES (INET_ATON('%s'),'%s','Docker host: %s','yes')" % (container_ip,container_name,docker_host)
+        self.db_insert(sql)
+
+    def RemoveDockerContainerFromHost(self,container_name,docker_host):
+        '''Remove Docker container from racktables'''
+        sql = "SELECT INET_NTOA(ip) FROM IPv4Address WHERE comment = 'Docker host: %s' AND name = '%s'" % (docker_host, container_name)
+        for ip in self.db_query_all(sql):
+                sql = "SELECT IFNULL(DATEDIFF(NOW(), MAX(date)), 0) FROM IPv4Log WHERE ip = INET_ATON('%s')" % (ip[0])
+                if self.db_query_one(sql) >= 1:
+                    self.InsertIPv4Log(ip[0],"Name " + container_name + " removed, comment Docker host: " + docker_host + " removed")
+                    sql = "DELETE FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip[0])
+                    self.db_insert(sql)
+
+    def UpdateDockerContainerName(self,ip,name):
+        '''Update Docker container name'''
+        self.InsertIPv4Log(ip,"Name set to " + name + "")
+        sql = "UPDATE IPv4Address SET name = '%s' WHERE ip = INET_ATON('%s')" % (name, ip)
+        self.db_insert(sql)
+
+    def UpdateDockerContainerHost(self,ip,host):
+        '''Update Docker container host'''
+        self.InsertIPv4Log(ip,"Comment set to Docker host: " + host + "")
+        sql = "UPDATE IPv4Address SET comment = 'Docker host: %s' WHERE ip = INET_ATON('%s')" % (host, ip)
+        self.db_insert(sql)
+
+    def GetDockerContainerName(self,ip):
+        '''Get Docker container name'''
+        #Get interface id
+        sql = "SELECT name FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip)
+        result = self.db_query_one(sql)
+        if result != None:
+            ip_name = result[0]
+        else:
+            ip_name = None
+        return ip_name
+
+    def GetDockerContainerHost(self,ip):
+        '''Get Docker container host'''
+        #Get interface id
+        sql = "SELECT comment FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip)
+        result = self.db_query_one(sql)
+        host = None
+        if result != None:
+            m = re.match("^Docker host: (.*)$",result[0])
+            if m:
+                host = m.group(1)
+        return host
+
     # Logging
     def InsertLog(self,object_id,message):
         '''Attach log message to specific object'''
-        sql = "INSERT INTO ObjectLog (object_id,user,date,content) VALUES (%d,'script',now(),'%s')" % (object_id, message)
+        sql = "INSERT INTO ObjectLog (object_id,user,date,content) VALUES (%d,'script',now(),'%s')" % (int(object_id), message)
         self.db_insert(sql)
 
-    # Attribute methods
-    def QueryTypedAttributeValue(self, object_id, attr_id, attr_type):
-        sql = "SELECT %s FROM AttributeValue WHERE object_id = %d AND attr_id = %d" % (attr_type, object_id, attr_id)
-        res = self.db_query_one(sql)
+    def InsertIPv4Log(self,ip,message):
+        '''Attach log message to IPv4'''
+        sql = "INSERT INTO IPv4Log (ip,user,date,message) VALUES (INET_ATON('%s'),'script',now(),'%s')" % (ip, message)
+        self.db_insert(sql)
 
-        if(res is None):
-            return None
-        else:
-            return res[0]
-
-    def InsertOrUpdateStringAttribute(self, object_id, objtype_id, attr_id, new_value):
-        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'string_value')
-        if(old_value is None):
-            # INSERT
-            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES (%d,%d,%d,'%s')" % (object_id, objtype_id, attr_id, new_value)
-        else:
-            # UPDATE
-            return "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
-
-    def InsertOrUpdateUintAttribute(self, object_id, objtype_id, attr_id, new_value):
-        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'uint_value')
-        if(old_value is None):
-            # INSERT
-            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,uint_value) VALUES (%d,%d,%d,%d)" % (object_id, objtype_id, attr_id, new_value)
-        elif(old_value != new_value):
-            # UPDATE
-            return "UPDATE AttributeValue SET uint_value = %d WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
-
-    def InsertOrUpdateFloatAttribute(self, object_id, objtype_id, attr_id, new_value):
-        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'float_value')
-        if(old_value is None):
-            # INSERT
-            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,float_value) VALUES (%d,%d,%d,%f)" % (object_id, objtype_id, attr_id, new_value)
-        elif(old_value != new_value):
-            # UPDATE
-            return "UPDATE AttributeValue SET float_value = %f WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
-
-    def InsertOrUpdateAttribute_FunctionDispatcher(self, attr_type):
-        InsertOrUpdateAttribute_TypeFunctions = {
-            'uint': self.InsertOrUpdateUintAttribute,
-            'dict': self.InsertOrUpdateUintAttribute,
-            'float': self.InsertOrUpdateFloatAttribute,
-            'string': self.InsertOrUpdateStringAttribute,
-            'date': None
-        }
-        return InsertOrUpdateAttribute_TypeFunctions.get(attr_type)
-
-    def InsertOrUpdateAttribute(self, object_id, attr_id, new_value):
-        # Get the object type
-        sql = "SELECT objtype_id FROM object WHERE id = %d" % (object_id)
-        result = self.db_query_one(sql)
-
-        if(result is not None):
-            objtype_id = result[0]
-        else:
-            # Object not found in database - return None since we can not update an attribute on a non-existing object
-            return None
-
-        # Get the attribute type
-        sql = "SELECT type FROM attribute WHERE id = %d" % (attr_id)
-        result = self.db_query_one(sql)
-
-        if(result is not None):
-            attr_type = result[0]
-        else:
-            # Attribute with given ID does not exist - return None since the requested attribute does not exist
-            return None
-        
-        # Get the correct function for this attribute type
-        func = self.InsertOrUpdateAttribute_FunctionDispatcher(attr_type)
-        
-        # Get the SQL statement for Insert/Update
-        sql = func(object_id, objtype_id, attr_id, new_value)
-
-        # If there is nothing to update (eg. old_value == new_value) then the InsertOrUpdateAttribute_TypeFunction returns None and there is no SQL statement to execute
-        if(sql is not None):
-            self.db_insert(sql)
-
-
+    # Attrubute methods
     def InsertAttribute(self,object_id,object_tid,attr_id,string_value,uint_value,name):
         '''Add or Update object attribute. 
         Require 6 arguments: object_id, object_tid, attr_id, string_value, uint_value, name'''
@@ -635,6 +627,84 @@ class RTObject:
         '''Insert value into dictionary identified by dict_id'''
         sql="INSERT INTO Dictionary (chapter_id,dict_value) VALUES (%d, '%s')"% (dict_id,value)
         self.db_insert(sql)
+
+    # Attribute methods
+    def QueryTypedAttributeValue(self, object_id, attr_id, attr_type):
+        sql = "SELECT %s FROM AttributeValue WHERE object_id = %d AND attr_id = %d" % (attr_type, object_id, attr_id)
+        res = self.db_query_one(sql)
+
+        if(res is None):
+            return None
+        else:
+            return res[0]
+
+    def InsertOrUpdateStringAttribute(self, object_id, objtype_id, attr_id, new_value):
+        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'string_value')
+        if(old_value is None):
+            # INSERT
+            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES (%d,%d,%d,'%s')" % (object_id, objtype_id, attr_id, new_value)
+        else:
+            # UPDATE
+            return "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
+
+    def InsertOrUpdateUintAttribute(self, object_id, objtype_id, attr_id, new_value):
+        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'uint_value')
+        if(old_value is None):
+            # INSERT
+            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,uint_value) VALUES (%d,%d,%d,%d)" % (object_id, objtype_id, attr_id, new_value)
+        elif(old_value != new_value):
+            # UPDATE
+            return "UPDATE AttributeValue SET uint_value = %d WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
+
+    def InsertOrUpdateFloatAttribute(self, object_id, objtype_id, attr_id, new_value):
+        old_value = self.QueryTypedAttributeValue(object_id, attr_id, 'float_value')
+        if(old_value is None):
+            # INSERT
+            return "INSERT INTO AttributeValue (object_id,object_tid,attr_id,float_value) VALUES (%d,%d,%d,%f)" % (object_id, objtype_id, attr_id, new_value)
+        elif(old_value != new_value):
+            # UPDATE
+            return "UPDATE AttributeValue SET float_value = %f WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
+
+    def InsertOrUpdateAttribute_FunctionDispatcher(self, attr_type):
+        InsertOrUpdateAttribute_TypeFunctions = {
+            'uint': self.InsertOrUpdateUintAttribute,
+            'dict': self.InsertOrUpdateUintAttribute,
+            'float': self.InsertOrUpdateFloatAttribute,
+            'string': self.InsertOrUpdateStringAttribute,
+            'date': None
+        }
+        return InsertOrUpdateAttribute_TypeFunctions.get(attr_type)
+
+    def InsertOrUpdateAttribute(self, object_id, attr_id, new_value):
+        # Get the object type
+        sql = "SELECT objtype_id FROM object WHERE id = %d" % (object_id)
+        result = self.db_query_one(sql)
+
+        if(result is not None):
+            objtype_id = result[0]
+        else:
+            # Object not found in database - return None since we can not update an attribute on a non-existing object
+            return None
+
+        # Get the attribute type
+        sql = "SELECT type FROM attribute WHERE id = %d" % (attr_id)
+        result = self.db_query_one(sql)
+
+        if(result is not None):
+            attr_type = result[0]
+        else:
+            # Attribute with given ID does not exist - return None since the requested attribute does not exist
+            return None
+        
+        # Get the correct function for this attribute type
+        func = self.InsertOrUpdateAttribute_FunctionDispatcher(attr_type)
+        
+        # Get the SQL statement for Insert/Update
+        sql = func(object_id, objtype_id, attr_id, new_value)
+
+        # If there is nothing to update (eg. old_value == new_value) then the InsertOrUpdateAttribute_TypeFunction returns None and there is no SQL statement to execute
+        if(sql is not None):
+            self.db_insert(sql)
 
 
     def CleanUnusedInterfaces(self,object_id,interface_list):
