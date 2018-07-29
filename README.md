@@ -8,6 +8,11 @@ Python module for accessing and manipulating racktables objects.
 Installation
 ----------------
     pip install racktables-api
+    
+PyPi project
+------------
+https://pypi.org/project/racktables-api/
+
 
 Example
 -------
