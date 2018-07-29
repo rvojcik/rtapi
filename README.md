@@ -30,5 +30,3 @@ Example
     print rt.ListObjects()
 
 
-
-
