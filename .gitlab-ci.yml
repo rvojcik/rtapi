@@ -1,7 +1,0 @@
-stages:
-  - test_install
-
-test_install:
-  script:
-    - pip install -r requirements.txt
-    - python setup.py install
