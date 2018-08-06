@@ -1,16 +1,20 @@
-rtapi
-=====
+# rtapi
 
 Racktables API
 
 Python module for accessing and manipulating racktables objects.
 
-Installation
-----------------
-    pip install racktables-api
+# Installation
 
-Example
--------
+    pip install racktables-api
+    
+# PyPi project
+
+https://pypi.org/project/racktables-api/
+
+
+# Example
+
 
     import MySQLdb
     import rtapi
@@ -28,7 +32,5 @@ Example
 
     # List all objects from database
     print rt.ListObjects()
-
-
 
 
