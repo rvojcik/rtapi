@@ -541,6 +541,16 @@ class RTObject:
 
         return resolution
 
+    def InterfaceGetIpv4IP(self,object_id,interface):
+        ''' Get list of IPv4 IP from interface '''
+        sql = "SELECT INET_NTOA(ip) AS ip from IPv4Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
+        return self.db_query_all(sql)
+
+    def InterfaceGetIpv6IP(self,object_id,interface):
+        ''' Get list of IPv6 IP from interface '''
+        sql = "SELECT HEX(ip) AS ip from IPv6Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
+        return self.db_query_all(sql)
+
     def InterfaceAddIpv4IP(self,object_id,device,ip):
         '''Add/Update IPv4 IP on interface'''
 
