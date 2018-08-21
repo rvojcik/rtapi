@@ -71,10 +71,24 @@ class RTObject:
         '''SQL function which return ID of last inserted row.'''
         return self.dbresult.lastrowid
     
-    def ListObjects(self):
-        '''List all objects'''
-        sql = 'SELECT name FROM Object'
-        return "Found " + str(len(self.db_query_all(sql))) +" objects in database" 
+    def ListObjects(self,data='sum'):
+        '''
+        List all objects from database
+        You can specify data sum or list to get summary or list of objects
+        In list you get array of id,name,asset_no,objtype_id
+        '''
+        if data == 'list':
+            sql = 'SELECT id,name,asset_no,objtype_id FROM Object'
+            return self.db_query_all(sql) 
+        else:
+            sql = 'SELECT count(name) FROM Object'
+            return "Found " + str(self.db_query_one(sql)[0]) +" objects in database" 
+    def ListObjectsByType(self,object_tid):
+        '''
+        Get list of objects based on object type ID
+        '''
+        sql = 'SELECT id,name,asset_no,label,comment,has_problems from Object WHERE objtype_id = %i' % (object_tid)
+        return self.db_query_all(sql)
 
     # Object methotds
     def ObjectExistST(self,service_tag):
