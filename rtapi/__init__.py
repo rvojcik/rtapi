@@ -377,6 +377,14 @@ class RTObject:
         return output
 
     # Interfaces methods
+    def GetInterfaceList(self,object_id):
+        ''' 
+        Get list of object interfaces ids and names 
+        Return array of touples id, name, type
+        '''
+        sql = "SELECT id, name, type FROM Port where object_id = %i" % (object_id)
+        return self.db_query_all(sql)
+
     def GetInterfaceName(self,object_id,interface_id):
         '''Find name of specified interface. Required object_id and interface_id argument'''
         #Get interface id
