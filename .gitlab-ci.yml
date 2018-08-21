@@ -1,0 +1,15 @@
+integration_test:
+    allow_failure: false
+    only:
+        - master
+    services:
+    - name: gitlab.osiris.pod.cvut.cz:4567/rvojcik/rtapi/test/rtdb:0.21.1
+      alias: rtdb      
+    image: python:2.7-stretch
+    script:
+        - pip install -r requirements.txt
+        - python setup.py install
+        - pip install -r tests/requirements.txt
+        - coverage run --source rtapi -m py.test
+        - coverage report
+
