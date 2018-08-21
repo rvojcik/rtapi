@@ -30,7 +30,7 @@ Simple python Class for manipulation with objects in racktables database.
 For proper function, some methods need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 '''
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
