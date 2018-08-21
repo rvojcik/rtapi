@@ -629,6 +629,18 @@ class RTObject:
 
         return getted_id
 
+    def GetDictionaryChapterId(self,value):
+        '''Search racktables dictionary chapter using exact value and return id of dictionary chapter'''
+        sql = "SELECT id FROM Chapter WHERE name = '"+value+"'"
+
+        result = self.db_query_one(sql)
+        if result != None:
+            getted_id = result[0]
+        else:
+            getted_id = None
+
+        return getted_id
+
     def GetDictionaryIdByValue(self,dict_value):
         '''Get the ID of a dictionary entry by its EXACT value'''
         sql = "SELECT dict_key FROM Dictionary WHERE dict_value = '%s'" % (dict_value)
@@ -654,7 +666,11 @@ class RTObject:
 
         return getted_id
 
-   
+    def InsertDictionaryChapter(self,value):
+        ''' Insert new dictionary chapter '''
+        sql = "INSERT INTO Chapter (sticky, name) VALUES ('no', '%s')" % (value)
+        self.db_insert(sql)
+
     def InsertDictionaryValue(self, dict_id, value):
         '''Insert value into dictionary identified by dict_id'''
         sql="INSERT INTO Dictionary (chapter_id,dict_value) VALUES (%d, '%s')"% (dict_id,value)
