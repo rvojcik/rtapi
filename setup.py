@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name="racktables-api",
-    version="0.2.2",
+    version="0.2.3",
     packages=["rtapi"],
     license="GPLv2",
     description="Simple racktables API",
