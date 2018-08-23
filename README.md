@@ -23,8 +23,9 @@ https://pypi.org/project/racktables-api/
     try:
         # Create connection to database
         db = MySQLdb.connect(host='hostname',port=3306, passwd='mypass',db='racktables',user='racktables')
-    except MySQLdb.Error ,e:
-        print "Error %d: %s" % (e.args[0],e.args[1])
+    except MySQLdb.Error:
+        e = sys.exc_info()[1]
+        print("Error %d: %s" % (e.args[0],e.args[1]))
         sys.exit(1)
 
     # Initialize rtapi with database connection
