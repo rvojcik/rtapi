@@ -735,7 +735,7 @@ class RTObject:
             return None
 
         # Get the attribute type
-        sql = "SELECT type FROM attribute WHERE id = %d" % (attr_id)
+        sql = "SELECT type FROM Attribute WHERE id = %d" % (attr_id)
         result = self.db_query_one(sql)
 
         if(result is not None):
