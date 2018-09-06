@@ -725,7 +725,7 @@ class RTObject:
 
     def InsertOrUpdateAttribute(self, object_id, attr_id, new_value):
         # Get the object type
-        sql = "SELECT objtype_id FROM object WHERE id = %d" % (object_id)
+        sql = "SELECT objtype_id FROM Object WHERE id = %d" % (object_id)
         result = self.db_query_one(sql)
 
         if(result is not None):
