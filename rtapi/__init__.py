@@ -962,7 +962,7 @@ class RTObject:
                 self.db_insert(sql)
 
                 old_object_name = self.GetObjectName(result[0])
-                self.InsertLog(old_object_name, "Unlinked server %s" % (server_name))
+                self.InsertLog(result[0], "Unlinked server %s" % (server_name))
                 self.InsertLog(server_id, "Unlinked from Blade Chassis %s" % (old_object_name))
                 self.InsertLog(chassis_id, "Linked with server %s" % (server_name))
                 self.InsertLog(server_id, "Linked with Blade Chassis %s" % (chassis_name))
