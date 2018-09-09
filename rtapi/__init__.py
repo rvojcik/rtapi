@@ -219,7 +219,11 @@ class RTObject:
         '''Check if ipv4 record exist in database'''
         sql = "select ip from IPv4Address where ip = INET_ATON('%s')" % (ip)
         if self.db_query_one(sql) == None:
-            return False
+            sql = "select ip from IPv4Allocation where ip = INET_ATON('%s')" % (ip)
+            if self.db_query_one(sql) == None:
+                return False
+            else:
+                return True
         else:
             return True
 
