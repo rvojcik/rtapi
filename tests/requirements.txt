@@ -1,0 +1,4 @@
+ipaddr
+mysqlclient
+pytest
+coverage
