@@ -83,6 +83,7 @@ class RTObject:
         else:
             sql = 'SELECT count(name) FROM Object'
             return "Found " + str(self.db_query_one(sql)[0]) +" objects in database"
+
     def ListObjectsByType(self,object_tid):
         """
         Get list of objects based on object type ID
@@ -619,8 +620,6 @@ class RTObject:
             text = "Added IPv6 IP %s on %s" % (ip,device)
             self.InsertLog(object_id,text)
 
-
-
     def GetDictionaryId(self,searchstring):
         """Search racktables dictionary using searchstring and return id of dictionary element"""
         sql = "SELECT dict_key FROM Dictionary WHERE dict_value LIKE '%"+searchstring+"%'"
@@ -656,7 +655,6 @@ class RTObject:
             getted_id = None
 
         return getted_id
-
 
     def GetDictionaryValueById(self,dict_key):
         """Get value from Dictionary by ID reference"""
@@ -758,7 +756,6 @@ class RTObject:
         if(sql is not None):
             self.db_insert(sql)
 
-
     def CleanUnusedInterfaces(self,object_id,interface_list):
         """Remove unused old interfaces"""
         sql = "SELECT id, name FROM Port WHERE object_id = %d" % (object_id)
@@ -788,7 +785,6 @@ class RTObject:
                     sql = "DELETE FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, row[1])
                     self.db_insert(sql)
                     self.InsertLog(object_id, "Removed interface %s" % row[1])
-
 
     def CleanVirtuals(self,object_id,virtual_servers):
         """Clean dead virtuals from hypervisor. virtual_servers is list of active virtual servers on hypervisor (object_id)"""
@@ -820,6 +816,7 @@ class RTObject:
                 virt_name = self.GetObjectName(virt_id)
                 logstring = "Removed virtual %s" % virt_name
                 self.InsertLog(object_id,logstring)
+
     def FindIPFromComment(self,comment,network_name):
         """Find IP address based on comment"""
         # Get Network information
@@ -952,7 +949,6 @@ class RTObject:
             sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES ( %d, 4, %d, '%s')" % ( server_id, slot_attribute_id, slot_number)
             self.db_insert(sql)
 
-
         # Assign server to chassis
         # Check if it's connected
         sql = "SELECT parent_entity_id FROM EntityLink WHERE child_entity_type = 'object' AND child_entity_id = %d" % (server_id)
@@ -977,8 +973,6 @@ class RTObject:
             self.db_insert(sql)
             self.InsertLog(chassis_id, "Linked with server %s" % (server_name))
             self.InsertLog(server_id, "Linked with Blade Chassis %s" % (chassis_name))
-
-
 
     def GetAllServerChassisId(self):
         """Get list of all server chassis IDs"""
