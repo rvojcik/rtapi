@@ -71,7 +71,7 @@ class RTObject:
         """SQL function which return ID of last inserted row."""
         return self.dbresult.lastrowid
 
-    def ListObjects(self,data='sum'):
+    def ListObjects(self, data='sum'):
         """
         List all objects from database
         You can specify data sum or list to get summary or list of objects
@@ -82,9 +82,9 @@ class RTObject:
             return self.db_query_all(sql)
         else:
             sql = 'SELECT count(name) FROM Object'
-            return "Found " + str(self.db_query_one(sql)[0]) +" objects in database"
+            return "Found " + str(self.db_query_one(sql)[0]) + " objects in database"
 
-    def ListObjectsByType(self,object_tid):
+    def ListObjectsByType(self, object_tid):
         """
         Get list of objects based on object type ID
         """
@@ -92,7 +92,7 @@ class RTObject:
         return self.db_query_all(sql)
 
     # Object methotds
-    def ObjectExistST(self,service_tag):
+    def ObjectExistST(self, service_tag):
         """Check if object exist in database based on asset_no"""
         sql = 'SELECT name FROM Object WHERE asset_no = \''+service_tag+'\''
         if self.db_query_one(sql) == None:
@@ -100,7 +100,7 @@ class RTObject:
         else:
             return True
 
-    def ObjectExistName(self,name):
+    def ObjectExistName(self, name):
         """Check if object exist in database based on name"""
         sql = 'select id from Object where name = \''+name+'\''
         if self.db_query_one(sql) == None:
@@ -108,36 +108,36 @@ class RTObject:
         else:
             return True
 
-    def ObjectExistSTName(self,name,asset_no):
+    def ObjectExistSTName(self, name, asset_no):
         """Check if object exist in database based on name"""
-        sql = "SELECT id FROM Object WHERE name = '%s' AND asset_no = '%s'" % (name,asset_no)
+        sql = "SELECT id FROM Object WHERE name = '%s' AND asset_no = '%s'" % (name, asset_no)
         if self.db_query_one(sql) == None:
             return False
         else:
             return True
 
-    def AddObject(self,name,server_type_id,asset_no,label):
+    def AddObject(self, name, server_type_id, asset_no, label):
         """Add new object to racktables"""
-        sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,'%s','%s')" % (name,server_type_id,asset_no,label)
+        sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,'%s','%s')" % (name, server_type_id, asset_no, label)
         self.db_insert(sql)
         return self.db_fetch_lastid()
 
-    def UpdateObjectLabel(self,object_id,label):
+    def UpdateObjectLabel(self, object_id, label):
         """Update label on object"""
         sql = "UPDATE Object SET label = '%s' where id = %d" % (label, object_id)
         self.db_insert(sql)
 
-    def UpdateObjectComment(self,object_id,comment):
+    def UpdateObjectComment(self, object_id, comment):
         """Update comment on object"""
         sql = "UPDATE Object SET comment = '%s' where id = %d" % (comment, object_id)
         self.db_insert(sql)
 
-    def UpdateObjectName(self,object_id,name):
+    def UpdateObjectName(self, object_id, name):
         """Update name on object"""
         sql = "UPDATE Object SET name = '%s' where id = %d" % (name, object_id)
         self.db_insert(sql)
 
-    def GetObjectName(self,object_id):
+    def GetObjectName(self, object_id):
         """Translate Object ID to Object Name"""
         #Get interface id
         sql = "SELECT name FROM Object WHERE id = %d" % (object_id)
@@ -149,7 +149,7 @@ class RTObject:
 
         return object_name
 
-    def GetObjectNameByAsset(self,service_tag):
+    def GetObjectNameByAsset(self, service_tag):
         """Translate Object AssetTag to Object Name"""
         #Get interface id
         sql = "SELECT name FROM Object WHERE asset_no = '%s'" % (service_tag)
@@ -161,7 +161,7 @@ class RTObject:
 
         return object_name
 
-    def GetObjectIdByAsset(self,service_tag):
+    def GetObjectIdByAsset(self, service_tag):
         """Get Object ID by Asset Tag"""
 
         sql = "SELECT id FROM Object WHERE asset_no = '%s'" % (service_tag)
@@ -173,7 +173,7 @@ class RTObject:
 
         return object_id
 
-    def GetObjectLabel(self,object_id):
+    def GetObjectLabel(self, object_id):
         """Get object label"""
         #Get interface id
         sql = "SELECT label FROM Object WHERE id = %d" % (object_id)
@@ -185,7 +185,7 @@ class RTObject:
 
         return object_label
 
-    def GetObjectComment(self,object_id):
+    def GetObjectComment(self, object_id):
         """Get object comment"""
         #Get interface id
         sql = "SELECT comment FROM Object WHERE id = %d" % (object_id)
@@ -197,14 +197,14 @@ class RTObject:
 
         return object_comment
 
-    def GetObjectTags(self,object_id):
+    def GetObjectTags(self, object_id):
         """Get object tags"""
         sql = "SELECT t1.tag as parent_tag, t2.tag as tag FROM TagTree as t1 RIGHT JOIN TagTree as t2 ON t1.id = t2.parent_id WHERE t2.id IN (SELECT tag_id FROM TagStorage JOIN Object ON TagStorage.entity_id = Object.id WHERE TagStorage.entity_realm='object' and Object.id = '%d')" % (object_id)
         result = self.db_query_all(sql)
 
         return result
 
-    def GetObjectId(self,name):
+    def GetObjectId(self, name):
         """Translate Object name to object id"""
         #Get interface id
         sql = "SELECT id FROM Object WHERE name = '%s'" % (name)
@@ -216,7 +216,7 @@ class RTObject:
 
         return object_id
 
-    def CheckIfIp4IPExists(self,ip):
+    def CheckIfIp4IPExists(self, ip):
         """Check if ipv4 record exist in database"""
         sql = "select ip from IPv4Address where ip = INET_ATON('%s')" % (ip)
         if self.db_query_one(sql) == None:
@@ -228,18 +228,18 @@ class RTObject:
         else:
             return True
 
-    def ListDockerContainersOfHost(self,docker_host):
+    def ListDockerContainersOfHost(self, docker_host):
         """List all Docker containers of specified host"""
         sql = 'SELECT name FROM IPv4Address WHERE comment = "Docker host: %s"' % (docker_host)
         return self.db_query_all(sql)
 
-    def AddDockerContainer(self,container_ip,container_name,docker_host):
+    def AddDockerContainer(self, container_ip, container_name, docker_host):
         """Add new Docker container to racktables"""
         self.InsertIPv4Log(container_ip,"Name set to " + container_name + ", comment set to Docker host: " + docker_host + "")
-        sql = "INSERT INTO IPv4Address (ip,name,comment,reserved) VALUES (INET_ATON('%s'),'%s','Docker host: %s','yes')" % (container_ip,container_name,docker_host)
+        sql = "INSERT INTO IPv4Address (ip,name,comment,reserved) VALUES (INET_ATON('%s'),'%s','Docker host: %s','yes')" % (container_ip, container_name, docker_host)
         self.db_insert(sql)
 
-    def RemoveDockerContainerFromHost(self,container_name,docker_host):
+    def RemoveDockerContainerFromHost(self, container_name, docker_host):
         """Remove Docker container from racktables"""
         sql = "SELECT INET_NTOA(ip) FROM IPv4Address WHERE comment = 'Docker host: %s' AND name = '%s'" % (docker_host, container_name)
         for ip in self.db_query_all(sql):
@@ -249,19 +249,19 @@ class RTObject:
                     sql = "DELETE FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip[0])
                     self.db_insert(sql)
 
-    def UpdateDockerContainerName(self,ip,name):
+    def UpdateDockerContainerName(self, ip, name):
         """Update Docker container name"""
         self.InsertIPv4Log(ip,"Name set to " + name + "")
         sql = "UPDATE IPv4Address SET name = '%s' WHERE ip = INET_ATON('%s')" % (name, ip)
         self.db_insert(sql)
 
-    def UpdateDockerContainerHost(self,ip,host):
+    def UpdateDockerContainerHost(self, ip, host):
         """Update Docker container host"""
         self.InsertIPv4Log(ip,"Comment set to Docker host: " + host + "")
         sql = "UPDATE IPv4Address SET comment = 'Docker host: %s' WHERE ip = INET_ATON('%s')" % (host, ip)
         self.db_insert(sql)
 
-    def GetDockerContainerName(self,ip):
+    def GetDockerContainerName(self, ip):
         """Get Docker container name"""
         #Get interface id
         sql = "SELECT name FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip)
@@ -272,31 +272,31 @@ class RTObject:
             ip_name = None
         return ip_name
 
-    def GetDockerContainerHost(self,ip):
+    def GetDockerContainerHost(self, ip):
         """Get Docker container host"""
         #Get interface id
         sql = "SELECT comment FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip)
         result = self.db_query_one(sql)
         host = None
         if result != None:
-            m = re.match("^Docker host: (.*)$",result[0])
+            m = re.match("^Docker host: (.*)$", result[0])
             if m:
                 host = m.group(1)
         return host
 
     # Logging
-    def InsertLog(self,object_id,message):
+    def InsertLog(self, object_id, message):
         """Attach log message to specific object"""
         sql = "INSERT INTO ObjectLog (object_id,user,date,content) VALUES (%d,'script',now(),'%s')" % (int(object_id), message)
         self.db_insert(sql)
 
-    def InsertIPv4Log(self,ip,message):
+    def InsertIPv4Log(self, ip, message):
         """Attach log message to IPv4"""
         sql = "INSERT INTO IPv4Log (ip,user,date,message) VALUES (INET_ATON('%s'),'script',now(),'%s')" % (ip, message)
         self.db_insert(sql)
 
     # Attrubute methods
-    def InsertAttribute(self,object_id,object_tid,attr_id,string_value,uint_value,name):
+    def InsertAttribute(self, object_id, object_tid, attr_id, string_value, uint_value, name):
         """Add or Update object attribute.
         Require 6 arguments: object_id, object_tid, attr_id, string_value, uint_value, name"""
 
@@ -337,12 +337,12 @@ class RTObject:
         else:
             # Attribute not exist, insert new
             if string_value == "NULL":
-                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,uint_value) VALUES (%d,%d,%d,%d)" % (object_id,object_tid,attr_id,uint_value)
+                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,uint_value) VALUES (%d,%d,%d,%d)" % (object_id, object_tid, attr_id, uint_value)
             else:
-                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES (%d,%d,%d,'%s')" % (object_id,object_tid,attr_id,string_value)
+                sql = "INSERT INTO AttributeValue (object_id,object_tid,attr_id,string_value) VALUES (%d,%d,%d,'%s')" % (object_id, object_tid, attr_id, string_value)
             self.db_insert(sql)
 
-    def GetAttributeId(self,searchstring):
+    def GetAttributeId(self, searchstring):
         """Search racktables database and get attribud id based on search string as argument"""
         sql = "SELECT id FROM Attribute WHERE name LIKE '%"+searchstring+"%'"
 
@@ -355,7 +355,7 @@ class RTObject:
 
         return getted_id
 
-    def GetAttributeIdByName(self,attr_name):
+    def GetAttributeIdByName(self, attr_name):
         """Get the ID of an attribute by its EXACT name"""
         sql = "SELECT id FROM Attribute WHERE name = '%s'" % (attr_name)
 
@@ -368,7 +368,7 @@ class RTObject:
 
         return getted_id
 
-    def GetAttributeValue(self,object_id,attr_id):
+    def GetAttributeValue(self, object_id, attr_id):
         """Search racktables database and get attribute values"""
         sql = "SELECT string_value,uint_value,float_value FROM AttributeValue WHERE object_id = %d AND attr_id = %d" % (object_id, attr_id)
 
@@ -382,7 +382,7 @@ class RTObject:
         return output
 
     # Interfaces methods
-    def GetInterfaceList(self,object_id):
+    def GetInterfaceList(self, object_id):
         """
         Get list of object interfaces ids and names
         Return array of touples id, name, type
@@ -390,7 +390,7 @@ class RTObject:
         sql = "SELECT id, name, type FROM Port where object_id = %i" % (object_id)
         return self.db_query_all(sql)
 
-    def GetInterfaceName(self,object_id,interface_id):
+    def GetInterfaceName(self, object_id, interface_id):
         """Find name of specified interface. Required object_id and interface_id argument"""
         #Get interface name
         sql = "SELECT name FROM Port WHERE object_id = %d AND id = %d" % (object_id, interface_id)
@@ -402,7 +402,7 @@ class RTObject:
 
         return port_name
 
-    def GetInterfaceId(self,object_id,interface):
+    def GetInterfaceId(self, object_id, interface):
         """Find id of specified interface"""
         #Get interface id
         sql = "SELECT id,name FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, interface)
@@ -414,7 +414,7 @@ class RTObject:
 
         return port_id
 
-    def UpdateNetworkInterface(self,object_id,interface):
+    def UpdateNetworkInterface(self, object_id, interface):
         """Add network interfece to object if not exist"""
 
         sql = "SELECT id,name FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, interface)
@@ -422,7 +422,7 @@ class RTObject:
         result = self.db_query_one(sql)
         if result == None:
 
-            sql = "INSERT INTO Port (object_id,name,iif_id,type) VALUES (%d,'%s',1,24)" % (object_id,interface)
+            sql = "INSERT INTO Port (object_id,name,iif_id,type) VALUES (%d,'%s',1,24)" % (object_id, interface)
             self.db_insert(sql)
             port_id = self.db_fetch_lastid()
 
@@ -432,7 +432,7 @@ class RTObject:
 
         return port_id
 
-    def GetPortDeviceNameById(self,port_id):
+    def GetPortDeviceNameById(self, port_id):
         """Get Device name and Port Name by port ID, return dictionary device_name, port_name"""
 
         sql = "SELECT Port.name as port_name, Object.name as obj_name FROM Port INNER JOIN Object ON Port.object_id = Object.id WHERE Port.id = %d;" % (port_id)
@@ -445,15 +445,15 @@ class RTObject:
             device_name = result[1]
             return {'device_name': device_name, 'port_name': port_name}
 
-    def LinkNetworkInterface(self,object_id,interface,switch_name,interface_switch):
+    def LinkNetworkInterface(self, object_id, interface, switch_name, interface_switch):
         """Link two devices togetger"""
         #Get interface id
-        port_id = self.GetInterfaceId(object_id,interface)
+        port_id = self.GetInterfaceId(object_id, interface)
         if port_id != None:
             #Get switch object ID
             switch_object_id = self.GetObjectId(switch_name)
             if switch_object_id != None:
-                switch_port_id = self.GetInterfaceId(switch_object_id,interface_switch)
+                switch_port_id = self.GetInterfaceId(switch_object_id, interface_switch)
                 if switch_port_id != None:
                     if switch_port_id > port_id:
                         select_object = 'portb'
@@ -518,7 +518,7 @@ class RTObject:
                                 self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
 
                             # Insert new connection
-                            sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (switch_port_id,port_id)
+                            sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (switch_port_id, port_id)
                             self.db_insert(sql)
 
                             # Log all three devices
@@ -546,20 +546,20 @@ class RTObject:
 
         return resolution
 
-    def InterfaceGetIpv4IP(self,object_id,interface):
+    def InterfaceGetIpv4IP(self, object_id, interface):
         """ Get list of IPv4 IP from interface """
         sql = "SELECT INET_NTOA(ip) AS ip from IPv4Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
         return self.db_query_all(sql)
 
-    def InterfaceGetIpv6IP(self,object_id,interface):
+    def InterfaceGetIpv6IP(self, object_id, interface):
         """ Get list of IPv6 IP from interface """
         sql = "SELECT HEX(ip) AS ip from IPv6Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
         return self.db_query_all(sql)
 
-    def InterfaceAddIpv4IP(self,object_id,device,ip):
+    def InterfaceAddIpv4IP(self, object_id, device,ip):
         """Add/Update IPv4 IP on interface"""
 
-        sql = "SELECT INET_NTOA(ip) from IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id,device)
+        sql = "SELECT INET_NTOA(ip) from IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
         result = self.db_query_all(sql)
 
         if result != None:
@@ -581,12 +581,12 @@ class RTObject:
                     self.db_insert(sql)
                     self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
 
-            sql = "INSERT INTO IPv4Allocation (object_id,ip,name) VALUES (%d,INET_ATON('%s'),'%s')" % (object_id,ip,device)
+            sql = "INSERT INTO IPv4Allocation (object_id,ip,name) VALUES (%d,INET_ATON('%s'),'%s')" % (object_id, ip, device)
             self.db_insert(sql)
-            text = "Added IP %s on %s" % (ip,device)
-            self.InsertLog(object_id,text)
+            text = "Added IP %s on %s" % (ip, device)
+            self.InsertLog(object_id, text)
 
-    def InterfaceAddIpv6IP(self,object_id,device,ip):
+    def InterfaceAddIpv6IP(self, object_id, device, ip):
         """Add/Update IPv6 IP on interface"""
         #Create address object using ipaddr
         addr6 = ipaddr.IPAddress(ip)
@@ -615,12 +615,12 @@ class RTObject:
                     self.db_insert(sql)
                     self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
 
-            sql = "INSERT INTO IPv6Allocation (object_id,ip,name) VALUES (%d,UNHEX('%s'),'%s')" % (object_id,ip6,device)
+            sql = "INSERT INTO IPv6Allocation (object_id,ip,name) VALUES (%d,UNHEX('%s'),'%s')" % (object_id, ip6, device)
             self.db_insert(sql)
-            text = "Added IPv6 IP %s on %s" % (ip,device)
-            self.InsertLog(object_id,text)
+            text = "Added IPv6 IP %s on %s" % (ip, device)
+            self.InsertLog(object_id, text)
 
-    def GetDictionaryId(self,searchstring):
+    def GetDictionaryId(self, searchstring):
         """Search racktables dictionary using searchstring and return id of dictionary element"""
         sql = "SELECT dict_key FROM Dictionary WHERE dict_value LIKE '%"+searchstring+"%'"
 
@@ -632,7 +632,7 @@ class RTObject:
 
         return getted_id
 
-    def GetDictionaryChapterId(self,value):
+    def GetDictionaryChapterId(self, value):
         """Search racktables dictionary chapter using exact value and return id of dictionary chapter"""
         sql = "SELECT id FROM Chapter WHERE name = '"+value+"'"
 
@@ -644,7 +644,7 @@ class RTObject:
 
         return getted_id
 
-    def GetDictionaryIdByValue(self,dict_value):
+    def GetDictionaryIdByValue(self, dict_value):
         """Get the ID of a dictionary entry by its EXACT value"""
         sql = "SELECT dict_key FROM Dictionary WHERE dict_value = '%s'" % (dict_value)
 
@@ -656,7 +656,7 @@ class RTObject:
 
         return getted_id
 
-    def GetDictionaryValueById(self,dict_key):
+    def GetDictionaryValueById(self, dict_key):
         """Get value from Dictionary by ID reference"""
         sql = "SELECT dict_value FROM Dictionary WHERE dict_key = %d " % (dict_key)
 
@@ -668,14 +668,14 @@ class RTObject:
 
         return getted_id
 
-    def InsertDictionaryChapter(self,value):
+    def InsertDictionaryChapter(self, value):
         """ Insert new dictionary chapter """
         sql = "INSERT INTO Chapter (sticky, name) VALUES ('no', '%s')" % (value)
         self.db_insert(sql)
 
     def InsertDictionaryValue(self, dict_id, value):
         """Insert value into dictionary identified by dict_id"""
-        sql="INSERT INTO Dictionary (chapter_id,dict_value) VALUES (%d, '%s')"% (dict_id,value)
+        sql="INSERT INTO Dictionary (chapter_id,dict_value) VALUES (%d, '%s')"% (dict_id, value)
         self.db_insert(sql)
 
     # Attribute methods
@@ -756,7 +756,7 @@ class RTObject:
         if(sql is not None):
             self.db_insert(sql)
 
-    def CleanUnusedInterfaces(self,object_id,interface_list):
+    def CleanUnusedInterfaces(self, object_id, interface_list):
         """Remove unused old interfaces"""
         sql = "SELECT id, name FROM Port WHERE object_id = %d" % (object_id)
         result = self.db_query_all(sql)
@@ -786,7 +786,7 @@ class RTObject:
                     self.db_insert(sql)
                     self.InsertLog(object_id, "Removed interface %s" % row[1])
 
-    def CleanVirtuals(self,object_id,virtual_servers):
+    def CleanVirtuals(self, object_id, virtual_servers):
         """Clean dead virtuals from hypervisor. virtual_servers is list of active virtual servers on hypervisor (object_id)"""
 
         sql = "SELECT child_entity_id FROM EntityLink WHERE parent_entity_id = %d" % object_id
@@ -811,13 +811,13 @@ class RTObject:
         if len(delete_virtual_id) != 0:
             for virt_id in delete_virtual_id:
 
-                sql = "DELETE FROM EntityLink WHERE parent_entity_id = %d AND child_entity_id = %d" % (object_id,virt_id)
+                sql = "DELETE FROM EntityLink WHERE parent_entity_id = %d AND child_entity_id = %d" % (object_id, virt_id)
                 self.db_insert(sql)
                 virt_name = self.GetObjectName(virt_id)
                 logstring = "Removed virtual %s" % virt_name
-                self.InsertLog(object_id,logstring)
+                self.InsertLog(object_id, logstring)
 
-    def FindIPFromComment(self,comment,network_name):
+    def FindIPFromComment(self, comment, network_name):
         """Find IP address based on comment"""
         # Get Network information
         sql = "SELECT ip,mask from IPv4Network WHERE name = '%s'" % (network_name)
@@ -839,7 +839,7 @@ class RTObject:
         else:
             return False
 
-    def FindIPv6FromComment(self,comment,network_name):
+    def FindIPv6FromComment(self, comment, network_name):
         """Find IP address based on comment"""
         sql = "SELECT HEX(ip),mask,hex(last_ip) from IPv6Network WHERE name = '%s'" % (network_name)
         result = self.db_query_one(sql)
@@ -860,7 +860,7 @@ class RTObject:
         else:
             return False
 
-    def CleanIPAddresses(self,object_id,ip_addresses,device):
+    def CleanIPAddresses(self, object_id, ip_addresses, device):
         """Clean unused ip from object. ip addresses is list of IP addresses configured on device (device) on host (object_id)"""
 
         sql = "SELECT INET_NTOA(ip) FROM IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
@@ -878,15 +878,15 @@ class RTObject:
                     delete_ips.append(old_ip[0])
         if len(delete_ips) != 0:
             for ip in delete_ips:
-                sql = "DELETE FROM IPv4Allocation WHERE ip = INET_ATON('%s') AND object_id = %d AND name = '%s'" % (ip,object_id,device)
+                sql = "DELETE FROM IPv4Allocation WHERE ip = INET_ATON('%s') AND object_id = %d AND name = '%s'" % (ip, object_id, device)
                 self.db_insert(sql)
-                logstring = "Removed IP %s from %s" % (ip,device)
-                self.InsertLog(object_id,logstring)
+                logstring = "Removed IP %s from %s" % (ip, device)
+                self.InsertLog(object_id, logstring)
 
-    def CleanIPv6Addresses(self,object_id,ip_addresses,device):
+    def CleanIPv6Addresses(self, object_id, ip_addresses, device):
         """Clean unused ipv6 from object. ip_addresses mus be list of active IP addresses on device (device) on host (object_id)"""
 
-        sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id,device)
+        sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
         result = self.db_query_all(sql)
 
         if result != None:
@@ -915,23 +915,23 @@ class RTObject:
         if len(delete_ips) != 0:
             for ip in delete_ips:
                 db_ip6_format = "".join(str(x) for x in ip.split(':'))
-                sql = "DELETE FROM IPv6Allocation WHERE ip = UNHEX('%s') AND object_id = %d AND name = '%s'" % (db_ip6_format,object_id,device)
+                sql = "DELETE FROM IPv6Allocation WHERE ip = UNHEX('%s') AND object_id = %d AND name = '%s'" % (db_ip6_format, object_id, device)
                 self.db_insert(sql)
-                logstring = "Removed IP %s from %s" % (ip,device)
-                self.InsertLog(object_id,logstring)
+                logstring = "Removed IP %s from %s" % (ip, device)
+                self.InsertLog(object_id, logstring)
 
-    def LinkVirtualHypervisor(self,object_id,virtual_id):
+    def LinkVirtualHypervisor(self, object_id, virtual_id):
         """Assign virtual server to correct hypervisor"""
-        sql = "SELECT child_entity_id FROM EntityLink WHERE parent_entity_id = %d AND child_entity_id = %d" % (object_id,virtual_id)
+        sql = "SELECT child_entity_id FROM EntityLink WHERE parent_entity_id = %d AND child_entity_id = %d" % (object_id, virtual_id)
         result = self.db_query_one(sql)
 
         if result == None:
             sql = "INSERT INTO EntityLink (parent_entity_type, parent_entity_id, child_entity_type, child_entity_id) VALUES ('object',%d,'object',%d)" % (object_id, virtual_id)
             self.db_insert(sql)
             text = "Linked virtual %s with hypervisor" % self.GetObjectName(virtual_id)
-            self.InsertLog(object_id,text)
+            self.InsertLog(object_id, text)
 
-    def AssignChassisSlot(self,chassis_name,slot_number,server_name):
+    def AssignChassisSlot(self, chassis_name, slot_number, server_name):
         """Assign server objects to server chassis"""
         chassis_id = self.GetObjectId(chassis_name)
         server_id = self.GetObjectId(server_name)
