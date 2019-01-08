@@ -139,7 +139,7 @@ class RTObject:
 
     def GetObjectName(self, object_id):
         """Translate Object ID to Object Name"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT name FROM Object WHERE id = %d" % (object_id)
         result = self.db_query_one(sql)
         if result != None:
@@ -151,7 +151,7 @@ class RTObject:
 
     def GetObjectNameByAsset(self, service_tag):
         """Translate Object AssetTag to Object Name"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT name FROM Object WHERE asset_no = '%s'" % (service_tag)
         result = self.db_query_one(sql)
         if result != None:
@@ -175,7 +175,7 @@ class RTObject:
 
     def GetObjectLabel(self, object_id):
         """Get object label"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT label FROM Object WHERE id = %d" % (object_id)
         result = self.db_query_one(sql)
         if result != None:
@@ -187,7 +187,7 @@ class RTObject:
 
     def GetObjectComment(self, object_id):
         """Get object comment"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT comment FROM Object WHERE id = %d" % (object_id)
         result = self.db_query_one(sql)
         if result != None:
@@ -206,7 +206,7 @@ class RTObject:
 
     def GetObjectId(self, name):
         """Translate Object name to object id"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT id FROM Object WHERE name = '%s'" % (name)
         result = self.db_query_one(sql)
         if result != None:
@@ -263,7 +263,7 @@ class RTObject:
 
     def GetDockerContainerName(self, ip):
         """Get Docker container name"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT name FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip)
         result = self.db_query_one(sql)
         if result != None:
@@ -274,7 +274,7 @@ class RTObject:
 
     def GetDockerContainerHost(self, ip):
         """Get Docker container host"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT comment FROM IPv4Address WHERE ip = INET_ATON('%s')" % (ip)
         result = self.db_query_one(sql)
         host = None
@@ -392,7 +392,7 @@ class RTObject:
 
     def GetInterfaceName(self, object_id, interface_id):
         """Find name of specified interface. Required object_id and interface_id argument"""
-        #Get interface name
+        # Get interface name
         sql = "SELECT name FROM Port WHERE object_id = %d AND id = %d" % (object_id, interface_id)
         result = self.db_query_one(sql)
         if result != None:
@@ -404,7 +404,7 @@ class RTObject:
 
     def GetInterfaceId(self, object_id, interface):
         """Find id of specified interface"""
-        #Get interface id
+        # Get interface id
         sql = "SELECT id,name FROM Port WHERE object_id = %d AND name = '%s'" % (object_id, interface)
         result = self.db_query_one(sql)
         if result != None:
@@ -447,10 +447,10 @@ class RTObject:
 
     def LinkNetworkInterface(self, object_id, interface, switch_name, interface_switch):
         """Link two devices togetger"""
-        #Get interface id
+        # Get interface id
         port_id = self.GetInterfaceId(object_id, interface)
         if port_id != None:
-            #Get switch object ID
+            # Get switch object ID
             switch_object_id = self.GetObjectId(switch_name)
             if switch_object_id != None:
                 switch_port_id = self.GetInterfaceId(switch_object_id, interface_switch)
@@ -495,7 +495,7 @@ class RTObject:
                         self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
                         self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
                     else:
-                        #Update old connection
+                        # Update old connection
                         old_switch_port_id = result[0]
                         if old_switch_port_id != switch_port_id:
                             # Clean previous link first
@@ -588,9 +588,9 @@ class RTObject:
 
     def InterfaceAddIpv6IP(self, object_id, device, ip):
         """Add/Update IPv6 IP on interface"""
-        #Create address object using ipaddr
+        # Create address object using ipaddr
         addr6 = ipaddr.IPAddress(ip)
-        #Create IPv6 format for Mysql
+        # Create IPv6 format for Mysql
         ip6 = "".join(str(x) for x in addr6.exploded.split(':')).upper()
 
         sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
@@ -894,7 +894,7 @@ class RTObject:
             delete_ips = []
             new_ip6_ips = []
 
-            #We must prepare ipv6 addresses into same format for compare
+            # We must prepare ipv6 addresses into same format for compare
             for new_ip in ip_addresses:
                 converted = ipaddr.IPAddress(new_ip).exploded.lower()
                 new_ip6_ips.append(converted)
@@ -902,9 +902,9 @@ class RTObject:
 
             for old_ip_hex in old_ips:
                 try:
-                    #First we must construct IP from HEX
+                    # First we must construct IP from HEX
                     tmp = re.sub("(.{4})","\\1:", old_ip_hex[0], re.DOTALL)
-                    #Remove last : and lower string
+                    # Remove last : and lower string
                     old_ip = tmp[:len(tmp)-1].lower()
 
                     test = new_ip6_ips.index(old_ip)
