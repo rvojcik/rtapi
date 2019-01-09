@@ -39,6 +39,8 @@ __all__ = ["RTObject"]
 
 import re
 import ipaddr
+from datetime import datetime
+from datetime import timedelta
 
 
 class RTObject:
@@ -715,13 +717,17 @@ class RTObject:
             # UPDATE
             return "UPDATE AttributeValue SET float_value = %f WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (new_value, object_id, attr_id, objtype_id)
 
+    def InsertOrUpdateDateAttribute(self, object_id, objtype_id, attr_id, new_value):
+        dt = datetime.strptime(new_value, "%Y-%m-%d")
+        return self.InsertOrUpdateUintAttribute(object_id, objtype_id, attr_id, (dt - datetime(1970, 1, 1)) / timedelta(seconds=1))
+
     def InsertOrUpdateAttribute_FunctionDispatcher(self, attr_type):
         InsertOrUpdateAttribute_TypeFunctions = {
             'uint': self.InsertOrUpdateUintAttribute,
             'dict': self.InsertOrUpdateUintAttribute,
             'float': self.InsertOrUpdateFloatAttribute,
             'string': self.InsertOrUpdateStringAttribute,
-            'date': None
+            'date': self.InsertOrUpdateDateAttribute
         }
         return InsertOrUpdateAttribute_TypeFunctions.get(attr_type)
 
