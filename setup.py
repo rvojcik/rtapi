@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="racktables-api",
-    version="0.2.5",
+    version="0.2.6",
     packages=["rtapi"],
     license="GPLv2",
     description="Simple racktables API",
