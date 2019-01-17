@@ -35,7 +35,7 @@ exporting, migration or automation purposes.
 For proper function, some methods
 need ipaddr module (https://pypi.python.org/pypi/ipaddr)
 
-More information about Racktables project can be 
+More information about Racktables project can be
 found on https://www.racktables.org/
 """
 __author__ = "Robert Vojcik (robert@vojcik.net)"
@@ -55,9 +55,9 @@ from datetime import timedelta
 class RTObject:
     """
     Main class which create rtapi object.
-    You could create multiple rtapi objects each 
+    You could create multiple rtapi objects each
     for different database and interact between them.
-    
+
     This Class needs only one parameter and it's
     database object.
     """
