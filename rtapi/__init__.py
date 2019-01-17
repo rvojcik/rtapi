@@ -24,12 +24,19 @@
 #   Foundation, Inc., 51 Franklin Street,
 #   Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""PyRacktables
-Simple python Class for manipulation
-with objects in racktables database.
+"""
+Racktables-API (rtapi) is simple python
+module for manipulation with objects
+in racktables database.
+
+It allows you to interact with database for
+exporting, migration or automation purposes.
 
 For proper function, some methods
 need ipaddr module (https://pypi.python.org/pypi/ipaddr)
+
+More information about Racktables project can be 
+found on https://www.racktables.org/
 """
 __author__ = "Robert Vojcik (robert@vojcik.net)"
 __version__ = "0.2.5"
@@ -46,7 +53,14 @@ from datetime import timedelta
 
 
 class RTObject:
-    """Ractables object. Require database object as argument. """
+    """
+    Main class which create rtapi object.
+    You could create multiple rtapi objects each 
+    for different database and interact between them.
+    
+    This Class needs only one parameter and it's
+    database object.
+    """
 
     # Init method
     def __init__(self, dbobject):
