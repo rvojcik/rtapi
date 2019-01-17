@@ -12,6 +12,9 @@ Python module for accessing and manipulating racktables objects.
 
 https://pypi.org/project/racktables-api/
 
+# Documentation
+
+https://rtapi.readthedocs.io
 
 # Example
 
