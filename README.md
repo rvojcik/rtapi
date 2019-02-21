@@ -1,4 +1,5 @@
 # rtapi
+[![pipeline status](https://gitlab.com/rvojcik/rtapi/badges/master/pipeline.svg)](https://gitlab.com/rvojcik/rtapi/commits/master) [![coverage report](https://gitlab.com/rvojcik/rtapi/badges/master/coverage.svg)](https://gitlab.com/rvojcik/rtapi/commits/master)
 
 Racktables API
 
