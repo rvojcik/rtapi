@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  rtdb:
+    image: registry.gitlab.com/rvojcik/rtapi/test/rtdb:0.21.1
+
+  testing:
+    build: ../
+    depends_on: ['rtdb']
