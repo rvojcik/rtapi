@@ -39,7 +39,7 @@ More information about Racktables project can be
 found on https://www.racktables.org/
 """
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.2.5"
+__version__ = "0.2.7"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
@@ -320,7 +320,41 @@ class RTObject:
         self.db_insert(sql)
 
     # Attrubute methods
-    def InsertAttribute(self, object_id, object_tid, attr_id, string_value, uint_value, name):
+    def CreateAttribute(self, attr_type, attr_name):
+        """ Create new attribute in Racktables. Require attr_type (string, dict, uint) and attr_name """
+        sql = "SELECT id FROM Attribute WHERE name = '" + attr_name + "'"
+
+        result = self.db_query_one(sql)
+        if result is not None:
+            getted_id = result[0]
+        else:
+            getted_id = None
+
+        if getted_id == None:
+            sql = "INSERT INTO Attribute (type, name) VALUES ('%s', '%s')" % (attr_type, attr_name)
+            self.db_insert(sql)
+
+    def MapAttribute(self, objtype_id, attr_id, chapter_id='NULL', sticky='no'):
+        """ Map attribute to object type """
+
+        if chapter_id != 'NULL':
+            chap_search = "chapter_id = %d AND " % (int(chapter_id))
+        else:
+            chap_search = ""
+
+        sql = "SELECT objtype_id FROM AttributeMap WHERE objtype_id = %d AND attr_id = %d AND %s sticky = '%s'" % ( objtype_id, attr_id, chap_search, sticky )
+
+        result = self.db_query_one(sql)
+        if result is not None:
+            getted_id = result[0]
+        else:
+            getted_id = None
+
+        if getted_id == None:
+            sql = "INSERT INTO AttributeMap (objtype_id, attr_id, chapter_id, sticky) VALUES (%d, %d, %s, '%s')" % (objtype_id, attr_id, str(chapter_id), sticky)
+            self.db_insert(sql)
+
+    def InsertAttribute(self, object_id, object_tid, attr_id, string_value, uint_value, name=None):
         """Add or Update object attribute.
         Require 6 arguments: object_id, object_tid, attr_id, string_value, uint_value, name"""
 
@@ -641,9 +675,15 @@ class RTObject:
             text = "Added IPv6 IP %s on %s" % (ip, device)
             self.InsertLog(object_id, text)
 
-    def GetDictionaryId(self, searchstring):
-        """Search racktables dictionary using searchstring and return id of dictionary element"""
-        sql = "SELECT dict_key FROM Dictionary WHERE dict_value LIKE '%" + searchstring + "%'"
+    def GetDictionaryId(self, searchstring, chapter_id=None):
+        """
+        Search racktables dictionary using searchstring and return id of dictionary element
+        It is possible to specify chapter_id for more specific search
+        """
+        if not chapter_id:
+            sql = "SELECT dict_key FROM Dictionary WHERE dict_value LIKE '%" + searchstring + "%'"
+        else:
+            sql = "SELECT dict_key FROM Dictionary WHERE chapter_id = %d AND dict_value LIKE '%" + searchstring + "%'" % (int(chapter_id))
 
         result = self.db_query_one(sql)
         if result is not None:
@@ -665,9 +705,15 @@ class RTObject:
 
         return getted_id
 
-    def GetDictionaryIdByValue(self, dict_value):
-        """Get the ID of a dictionary entry by its EXACT value"""
-        sql = "SELECT dict_key FROM Dictionary WHERE dict_value = '%s'" % (dict_value)
+    def GetDictionaryIdByValue(self, dict_value, chapter_id=None):
+        """
+        Get the ID of a dictionary entry by its EXACT value
+        Is it possible to specify chapter_id for more specific search.
+        """
+        if not chapter_id:
+            sql = "SELECT dict_key FROM Dictionary WHERE dict_value = '%s'" % (dict_value)
+        else:
+            sql = "SELECT dict_key FROM Dictionary WHERE dict_value = '%s' AND chapter_id = %d" % (dict_value, int(chapter_id))
 
         result = self.db_query_one(sql)
         if result is not None:
@@ -689,9 +735,9 @@ class RTObject:
 
         return getted_id
 
-    def InsertDictionaryChapter(self, value):
+    def InsertDictionaryChapter(self, value, sticky='no'):
         """ Insert new dictionary chapter """
-        sql = "INSERT INTO Chapter (sticky, name) VALUES ('no', '%s')" % (value)
+        sql = "INSERT INTO Chapter (sticky, name) VALUES ('%s', '%s')" % (sticky, value)
         self.db_insert(sql)
 
     def InsertDictionaryValue(self, dict_id, value):
