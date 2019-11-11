@@ -23,7 +23,7 @@ build_python2:
     stage: build
     allow_failure: false
     only:
-        - master
+        - tags
     image: python:2.7-stretch
     script:
         - pip install --upgrade setuptools wheel
@@ -36,7 +36,7 @@ build_python3:
     stage: build
     allow_failure: false
     only:
-        - master
+        - tags
     image: python:3.6
     script:
         - pip install --upgrade setuptools wheel
@@ -49,7 +49,7 @@ publish_package:
     stage: publish
     allow_failure: false
     only:
-        - master
+        - tags
     image: python:3.6
     script:
         - pip install --upgrade setuptools wheel twine
