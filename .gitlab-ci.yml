@@ -1,4 +1,10 @@
+stages:
+    - test
+    - build
+    - publish
+
 integration_test:
+    stage: test
     allow_failure: false
     only:
         - master
@@ -13,3 +19,39 @@ integration_test:
         - coverage run --source rtapi -m py.test
         - coverage report
 
+build_python2:
+    stage: build
+    allow_failure: false
+    only:
+        - master
+    image: python:2.7-stretch
+    script:
+        - pip install --upgrade setuptools wheel
+        - python setup.py sdist bdist_wheel
+    artifacts:
+        paths:
+            - dist/
+
+build_python3:
+    stage: build
+    allow_failure: false
+    only:
+        - master
+    image: python:3.6
+    script:
+        - pip install --upgrade setuptools wheel
+        - python setup.py sdist bdist_wheel
+    artifacts:
+        paths:
+            - dist/
+
+publish_package:
+    stage: publish
+    allow_failure: false
+    only:
+        - master
+    image: python:3.6
+    script:
+        - pip install --upgrade setuptools wheel twine
+        - ls -l dist/*
+        - twine upload dist/*
