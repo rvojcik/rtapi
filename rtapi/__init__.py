@@ -39,7 +39,7 @@ More information about Racktables project can be
 found on https://www.racktables.org/
 """
 __author__ = "Robert Vojcik (robert@vojcik.net)"
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 __copyright__ = "OpenSource"
 __license__ = "GPLv2"
 
