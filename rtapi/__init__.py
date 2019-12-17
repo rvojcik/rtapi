@@ -555,8 +555,8 @@ class RTObject:
                         old_switch_port_id = result[0]
                         if old_switch_port_id != switch_port_id:
                             # Clean previous link first
-                            # Check and clean previous link (switch and port)
-                            sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                            # Check and clean previous link (port_id)
+                            sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (port_id, port_id)
                             result = self.db_query_one(sql)
                             if result is not None:
                                 # Get ports id of old link
@@ -565,7 +565,7 @@ class RTObject:
                                 old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
 
                                 # Clean switchport connection
-                                sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                                sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (port_id, port_id)
                                 self.db_insert(sql)
 
                                 # Log message to both device
