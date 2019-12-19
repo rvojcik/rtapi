@@ -898,6 +898,18 @@ class RTObject:
                 logstring = "Removed virtual %s" % virt_name
                 self.InsertLog(object_id, logstring)
 
+    def SetIPComment(self, comment, ip):
+        """ Set comment for IP address """
+        sql = "SELECT comment FROM IPv4Address WHERE INET_NTOA(ip) = '%s'" % (ip)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            sql = "UPDATE IPv4Address SET comment = '%s' WHERE INET_NTOA(ip) = '%s'" % (comment, ip)
+        else:
+            sql = "INSERT INTO IPv4Address (ip, comment) VALUES (INET_ATON('%s'), '%s')" % (ip, comment)
+
+        self.db_insert(sql)
+
     def FindIPFromComment(self, comment, network_name):
         """Find IP address based on comment"""
         # Get Network information
@@ -919,6 +931,24 @@ class RTObject:
 
         else:
             return False
+
+    def SetIP6Comment(self, comment, ip):
+        """ Set comment for IPv6 address """
+
+        # Create address object using ipaddr
+        addr6 = ipaddr.IPAddress(ip)
+        # Create IPv6 format for Mysql
+        db_ip6_format = "".join(str(x) for x in addr6.exploded.split(':')).upper()
+
+        sql = "SELECT comment FROM IPv6Address WHERE HEX(ip) = '%s'" % (db_ip6_format)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            sql = "UPDATE IPv6Address SET comment = '%s' WHERE HEX(ip) = '%s'" % (comment, db_ip6_format)
+        else:
+            sql = "INSERT INTO IPv6Address (ip, comment) VALUES (UNHEX('%s'), '%s')" % (db_ip6_format, comment)
+
+        self.db_insert(sql)
 
     def FindIPv6FromComment(self, comment, network_name):
         """Find IP address based on comment"""
