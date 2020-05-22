@@ -910,6 +910,18 @@ class RTObject:
 
         self.db_insert(sql)
 
+    def SetIPName(self, name, ip):
+        """ Set name for IP address """
+        sql = "SELECT name FROM IPv4Address WHERE INET_NTOA(ip) = '%s'" % (ip)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            sql = "UPDATE IPv4Address SET name = '%s' WHERE INET_NTOA(ip) = '%s'" % (name, ip)
+        else:
+            sql = "INSERT INTO IPv4Address (ip, name) VALUES (INET_ATON('%s'), '%s')" % (ip, name)
+
+        self.db_insert(sql)
+
     def FindIPFromComment(self, comment, network_name):
         """Find IP address based on comment"""
         # Get Network information
