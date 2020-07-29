@@ -19,6 +19,22 @@ integration_test:
         - coverage run --source rtapi -m py.test
         - coverage report
 
+integration_test:
+    stage: test
+    allow_failure: false
+    only:
+        - master
+    services:
+    - name: registry.gitlab.com/rvojcik/rtapi/test/rtdb:0.21.1
+      alias: rtdb      
+    image: python:3.7-buster
+    script:
+        - pip install -r requirements.txt
+        - python setup.py install
+        - pip install -r tests/requirements.txt
+        - coverage run --source rtapi -m py.test
+        - coverage report
+
 build_python2:
     stage: build
     allow_failure: false
