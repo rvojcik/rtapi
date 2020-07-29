@@ -3,7 +3,7 @@ stages:
     - build
     - publish
 
-integration_test:
+Test (Python 2.7):
     stage: test
     allow_failure: false
     only:
@@ -19,7 +19,7 @@ integration_test:
         - coverage run --source rtapi -m py.test
         - coverage report
 
-integration_test:
+Test (Python 3.7):
     stage: test
     allow_failure: false
     only:
