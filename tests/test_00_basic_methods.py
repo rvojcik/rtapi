@@ -9,7 +9,7 @@ test_object_id = 0
 if sys.version_info[0] == 2:
     test_instance = long
 else:
-    test_instances = int
+    test_instance = int
 
 def test_noObjectExistST():
     assert rt.rtapi.ObjectExistST('asdf000') == False
@@ -20,7 +20,7 @@ def test_noObjectExistName():
 def test_AddObject():
     global test_object_id
     test_object_id = rt.rtapi.AddObject(test_object["name"],test_object["typeid"],test_object["asset"], test_object["label"])
-    assert isinstance(test_object_id, long) == True
+    assert isinstance(test_object_id, test_instance) == True
 
 def test_ObjectExistST():
     assert rt.rtapi.ObjectExistST(test_object["asset"]) == True
