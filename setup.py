@@ -3,14 +3,18 @@ from setuptools import setup
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+with open("requirements.txt", "r") as fh:
+    install_reqs = fh.read().split()
+
 setup(
     name="racktables-api",
-    version="0.2.8",
+    version="0.2.9",
     packages=["rtapi"],
     license="GPLv2",
     description="Simple racktables API",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    install_requires=install_reqs,
     url="https://github.com/rvojcik/rtapi",
     author="Robert Vojcik",
     author_email="robert@vojcik.net",
@@ -21,6 +25,7 @@ setup(
             "Operating System :: Unix",
             "Programming Language :: Python",
             "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3",
             "Topic :: Database"
     ]
