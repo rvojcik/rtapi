@@ -2,8 +2,14 @@
 
 import rtapi_con as rt
 import object_for_test
+import sys
 test_object = object_for_test.test_object_basic
 test_object_id = 0
+
+if sys.version_info[0] == 2:
+    test_instance = long
+else:
+    test_instances = int
 
 def test_noObjectExistST():
     assert rt.rtapi.ObjectExistST('asdf000') == False
