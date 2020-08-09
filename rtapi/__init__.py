@@ -33,7 +33,7 @@ It allows you to interact with database for
 exporting, migration or automation purposes.
 
 For proper function, some methods
-need ipaddr module (https://pypi.python.org/pypi/ipaddr)
+need ipaddress module (https://pypi.org/project/ipaddress/)
 
 More information about Racktables project can be
 found on https://www.racktables.org/
@@ -47,7 +47,7 @@ __all__ = ["RTObject"]
 
 
 import re
-import ipaddr
+import ipaddress
 from datetime import datetime
 from datetime import timedelta
 
@@ -653,8 +653,8 @@ class RTObject:
 
     def InterfaceAddIpv6IP(self, object_id, device, ip):
         """Add/Update IPv6 IP on interface"""
-        # Create address object using ipaddr
-        addr6 = ipaddr.IPAddress(ip)
+        # Create address object using ipaddress
+        addr6 = ipaddress.IPv6Address(ip)
         # Create IPv6 format for Mysql
         ip6 = "".join(str(x) for x in addr6.exploded.split(':')).upper()
 
@@ -1019,7 +1019,7 @@ class RTObject:
 
             # We must prepare ipv6 addresses into same format for compare
             for new_ip in ip_addresses:
-                converted = ipaddr.IPAddress(new_ip).exploded.lower()
+                converted = ipaddress.IPv6Address(new_ip).exploded.lower()
                 new_ip6_ips.append(converted)
 
             for old_ip_hex in old_ips:
