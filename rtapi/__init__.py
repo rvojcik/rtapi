@@ -637,6 +637,23 @@ class RTObject:
         if(sql is not None):
             self.db_insert(sql)
 
+    def GetObjectAttributes(self, object_id):
+        """Get list of Object attributes"""
+
+        sql = "SELECT select ob.id, \
+               ob.name AS routerName, \
+               ob.label, \
+               a.name AS attrName, \
+               a.type, \
+               d.dict_value, \
+               av.* FROM Object as ob \
+               JOIN AttributeValue AS av ON (ob.id=av.object_id) \
+               JOIN Attribute AS a ON (av.attr_id=a.id) \
+               LEFT JOIN Dictionary AS d ON (d.dict_key=av.uint_value) \
+               WHERE ob.id = %d ORDER BY a.name" % (int(object_id))
+
+        return self.db_query_all(sql)
+
     def CleanUnusedInterfaces(self, object_id, interface_list):
         """Remove unused old interfaces"""
         sql = "SELECT id, name FROM Port WHERE object_id = %d" % (object_id)
