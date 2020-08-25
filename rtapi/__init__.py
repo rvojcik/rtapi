@@ -240,18 +240,6 @@ class RTObject:
 
         return object_id
 
-    def CheckIfIp4IPExists(self, ip):
-        """Check if ipv4 record exist in database"""
-        sql = "select ip from IPv4Address where ip = INET_ATON('%s')" % (ip)
-        if self.db_query_one(sql) is None:
-            sql = "select ip from IPv4Allocation where ip = INET_ATON('%s')" % (ip)
-            if self.db_query_one(sql) is None:
-                return False
-            else:
-                return True
-        else:
-            return True
-
     def ListDockerContainersOfHost(self, docker_host):
         """List all Docker containers of specified host"""
         sql = 'SELECT name FROM IPv4Address WHERE comment = "Docker host: %s"' % (docker_host)
@@ -371,24 +359,19 @@ class RTObject:
 
             if old_string_value is not None:
                 attribute_type = "string"
-                old_value = old_string_value
                 if old_string_value == string_value:
                     same_flag = "yes"
             elif old_uint_value is not None:
                 attribute_type = "uint"
-                old_value = old_uint_value
                 if old_uint_value == uint_value:
                     same_flag = "yes"
 
             # If exist, update value
-            new_value = ''
             if same_flag == "no":
                 if attribute_type == "string":
                     sql = "UPDATE AttributeValue SET string_value = '%s' WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (string_value, object_id, attr_id, object_tid)
-                    new_value = string_value
                 if attribute_type == "uint":
                     sql = "UPDATE AttributeValue SET uint_value = %d WHERE object_id = %d AND attr_id = %d AND object_tid = %d" % (uint_value, object_id, attr_id, object_tid)
-                    new_value = uint_value
 
                 self.db_insert(sql)
 
@@ -502,198 +485,15 @@ class RTObject:
             device_name = result[1]
             return {'device_name': device_name, 'port_name': port_name}
 
-    def LinkNetworkInterface(self, object_id, interface, switch_name, interface_switch):
-        """Link two devices togetger"""
-        # Get interface id
-        port_id = self.GetInterfaceId(object_id, interface)
-        if port_id is not None:
-            # Get switch object ID
-            switch_object_id = self.GetObjectId(switch_name)
-            if switch_object_id is not None:
-                switch_port_id = self.GetInterfaceId(switch_object_id, interface_switch)
-                if switch_port_id is not None:
-                    if switch_port_id > port_id:
-                        select_object = 'portb'
-                    else:
-                        select_object = 'porta'
-
-                    # Check server interface, update or create new link
-                    sql = "SELECT %s FROM Link WHERE porta = %d OR portb = %d" % (select_object, port_id, port_id)
-                    result = self.db_query_one(sql)
-                    if result is None:
-                        # Check if switch port is connected to another server
-                        sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
-                        result = self.db_query_one(sql)
-                        if result is not None:
-                            # Get ports id of old link
-                            old_link_a, old_link_b = result
-                            old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
-                            old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
-
-                            # Clean switchport connection
-                            sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
-                            self.db_insert(sql)
-
-                            # Log message to both device
-                            text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
-                            self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
-                            self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
-
-                        # Insert new connection
-                        sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (port_id, switch_port_id)
-                        self.db_insert(sql)
-                        resolution = True
-
-                        # Log it to both devices
-                        device_dict = self.GetPortDeviceNameById(port_id)
-                        switch_dict = self.GetPortDeviceNameById(switch_port_id)
-                        text = "New connection %s,%s with %s,%s" % (device_dict['device_name'], device_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
-                        self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
-                        self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
-                    else:
-                        # Update old connection
-                        old_switch_port_id = result[0]
-                        if old_switch_port_id != switch_port_id:
-                            # Clean previous link first
-                            # Check and clean previous link (port_id)
-                            sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (port_id, port_id)
-                            result = self.db_query_one(sql)
-                            if result is not None:
-                                # Get ports id of old link
-                                old_link_a, old_link_b = result
-                                old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
-                                old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
-
-                                # Clean switchport connection
-                                sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (port_id, port_id)
-                                self.db_insert(sql)
-
-                                # Log message to both device
-                                text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
-                                self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
-                                self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
-
-                            # Insert new connection
-                            sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (switch_port_id, port_id)
-                            self.db_insert(sql)
-
-                            # Log all three devices
-                            old_switch_dict = self.GetPortDeviceNameById(old_switch_port_id)
-                            switch_dict = self.GetPortDeviceNameById(switch_port_id)
-                            device_dict = self.GetPortDeviceNameById(port_id)
-                            text = "Update connection from %s,%s to %s,%s" % (old_switch_dict['device_name'], old_switch_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
-                            self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
-
-                            text = "%s,%s changed connection from %s,%s and connected to %s,%s" % (device_dict['device_name'], device_dict['port_name'], old_switch_dict['device_name'], old_switch_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
-                            self.InsertLog(self.GetObjectId(old_switch_dict['device_name']), text)
-                            self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
-
-                            resolution = True
-                        resolution = None
-
-                else:
-                    resolution = None
-            else:
-                resolution = None
-
-        else:
-            resolution = None
-
-        return resolution
-
-    def ObjectGetIpv4IPList(self,object_id):
-        ''' Get list of IPv4 IP from object '''
-        sql = "SELECT INET_NTOA(ip) AS ip from IPv4Allocation where object_id = %i" % (object_id)
-        return self.db_query_all(sql)
-
-    def ObjectGetIpv6IPList(self,object_id):
-        ''' Get list of IPv6 IP from object '''
-        sql = "SELECT HEX(ip) AS ip from IPv6Allocation where object_id = %i" % (object_id)
-        return self.db_query_all(sql)
-
-    def InterfaceGetIpv4IP(self, object_id, interface):
-        """ Get list of IPv4 IP from interface """
-        sql = "SELECT INET_NTOA(ip) AS ip from IPv4Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
-        return self.db_query_all(sql)
-
-    def InterfaceGetIpv6IP(self, object_id, interface):
-        """ Get list of IPv6 IP from interface """
-        sql = "SELECT HEX(ip) AS ip from IPv6Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
-        return self.db_query_all(sql)
-
-    def InterfaceAddIpv4IP(self, object_id, device, ip):
-        """Add/Update IPv4 IP on interface"""
-
-        sql = "SELECT INET_NTOA(ip) from IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
-        result = self.db_query_all(sql)
-
-        if result is not None:
-            old_ips = result
-
-        is_there = "no"
-
-        for old_ip in old_ips:
-            if old_ip[0] == ip:
-                is_there = "yes"
-
-        if is_there == "no":
-            sql = "SELECT name FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
-            result = self.db_query_all(sql)
-
-            if result is not None:
-                if result != ():
-                    sql = "DELETE FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
-                    self.db_insert(sql)
-                    self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
-
-            sql = "INSERT INTO IPv4Allocation (object_id,ip,name) VALUES (%d,INET_ATON('%s'),'%s')" % (object_id, ip, device)
-            self.db_insert(sql)
-            text = "Added IP %s on %s" % (ip, device)
-            self.InsertLog(object_id, text)
-
-    def InterfaceAddIpv6IP(self, object_id, device, ip):
-        """Add/Update IPv6 IP on interface"""
-        # Create address object using ipaddress
-        addr6 = ipaddress.IPv6Address(ip)
-        # Create IPv6 format for Mysql
-        ip6 = "".join(str(x) for x in addr6.exploded.split(':')).upper()
-
-        sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
-        result = self.db_query_all(sql)
-
-        if result is not None:
-            old_ips = result
-
-        is_there = "no"
-
-        for old_ip in old_ips:
-            if old_ip[0] == ip6:
-                is_there = "yes"
-
-        if is_there == "no":
-            sql = "SELECT name FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip6)
-            result = self.db_query_all(sql)
-
-            if result is not None:
-                if result != ():
-                    sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip6)
-                    self.db_insert(sql)
-                    self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
-
-            sql = "INSERT INTO IPv6Allocation (object_id,ip,name) VALUES (%d,UNHEX('%s'),'%s')" % (object_id, ip6, device)
-            self.db_insert(sql)
-            text = "Added IPv6 IP %s on %s" % (ip, device)
-            self.InsertLog(object_id, text)
-
     def GetDictionaryId(self, searchstring, chapter_id=None):
         """
         Search racktables dictionary using searchstring and return id of dictionary element
         It is possible to specify chapter_id for more specific search
         """
         if not chapter_id:
-            sql = "SELECT dict_key FROM Dictionary WHERE dict_value LIKE '%" + searchstring + "%'"
+            sql = "SELECT dict_key FROM Dictionary WHERE dict_value LIKE '%%%s%%'" % (searchstring)
         else:
-            sql = "SELECT dict_key FROM Dictionary WHERE chapter_id = %d AND dict_value LIKE '%" + searchstring + "%'" % (int(chapter_id))
+            sql = "SELECT dict_key FROM Dictionary WHERE chapter_id = %d AND dict_value LIKE '%%%s%%'" % (int(chapter_id), searchstring)
 
         result = self.db_query_one(sql)
         if result is not None:
@@ -886,7 +686,7 @@ class RTObject:
 
             for old_id in old_virtuals_ids:
                 try:
-                    test = new_virtuals_ids.index(old_id[0])
+                    new_virtuals_ids.index(old_id[0])
                 except ValueError:
                     delete_virtual_id.append(old_id[0])
         if len(delete_virtual_id) != 0:
@@ -898,149 +698,6 @@ class RTObject:
                 logstring = "Removed virtual %s" % virt_name
                 self.InsertLog(object_id, logstring)
 
-    def SetIPComment(self, comment, ip):
-        """ Set comment for IP address """
-        sql = "SELECT comment FROM IPv4Address WHERE INET_NTOA(ip) = '%s'" % (ip)
-        result = self.db_query_one(sql)
-
-        if result is not None:
-            sql = "UPDATE IPv4Address SET comment = '%s' WHERE INET_NTOA(ip) = '%s'" % (comment, ip)
-        else:
-            sql = "INSERT INTO IPv4Address (ip, comment) VALUES (INET_ATON('%s'), '%s')" % (ip, comment)
-
-        self.db_insert(sql)
-
-    def SetIPName(self, name, ip):
-        """ Set name for IP address """
-        sql = "SELECT name FROM IPv4Address WHERE INET_NTOA(ip) = '%s'" % (ip)
-        result = self.db_query_one(sql)
-
-        if result is not None:
-            sql = "UPDATE IPv4Address SET name = '%s' WHERE INET_NTOA(ip) = '%s'" % (name, ip)
-        else:
-            sql = "INSERT INTO IPv4Address (ip, name) VALUES (INET_ATON('%s'), '%s')" % (ip, name)
-
-        self.db_insert(sql)
-
-    def FindIPFromComment(self, comment, network_name):
-        """Find IP address based on comment"""
-        # Get Network information
-        sql = "SELECT ip,mask from IPv4Network WHERE name = '%s'" % (network_name)
-        result = self.db_query_one(sql)
-
-        if result is not None:
-            ip_int = result[0]
-            ip_mask = result[1]
-            ip_int_max = (2 ** (32 - ip_mask)) + ip_int
-
-            sql = "SELECT INET_NTOA(ip) FROM IPv4Address WHERE ip >= %d AND ip <= %d and comment = '%s'" % (ip_int, ip_int_max, comment)
-
-            result = self.db_query_all(sql)
-            if result is not None:
-                return "\n".join(str(x[0]) + "/" + str(ip_mask) for x in result)
-            else:
-                return False
-
-        else:
-            return False
-
-    def SetIP6Comment(self, comment, ip):
-        """ Set comment for IPv6 address """
-
-        # Create address object using ipaddr
-        addr6 = ipaddr.IPAddress(ip)
-        # Create IPv6 format for Mysql
-        db_ip6_format = "".join(str(x) for x in addr6.exploded.split(':')).upper()
-
-        sql = "SELECT comment FROM IPv6Address WHERE HEX(ip) = '%s'" % (db_ip6_format)
-        result = self.db_query_one(sql)
-
-        if result is not None:
-            sql = "UPDATE IPv6Address SET comment = '%s' WHERE HEX(ip) = '%s'" % (comment, db_ip6_format)
-        else:
-            sql = "INSERT INTO IPv6Address (ip, comment) VALUES (UNHEX('%s'), '%s')" % (db_ip6_format, comment)
-
-        self.db_insert(sql)
-
-    def FindIPv6FromComment(self, comment, network_name):
-        """Find IP address based on comment"""
-        sql = "SELECT HEX(ip),mask,hex(last_ip) from IPv6Network WHERE name = '%s'" % (network_name)
-        result = self.db_query_one(sql)
-
-        if result is not None:
-            ip = result[0]
-            ip_mask = result[1]
-            ip_max = result[2]
-
-            sql = "select HEX(ip) from IPv6Address where ip between UNHEX('%s') AND UNHEX('%s') AND comment = '%s';" % (ip, ip_max, comment)
-
-            result = self.db_query_all(sql)
-            if result is not None:
-                return "\n".join(str(re.sub(r'(.{4})(?=.)', r'\1:', x[0]).lower()) + "/" + str(ip_mask) for x in result)
-            else:
-                return False
-
-        else:
-            return False
-
-    def CleanIPAddresses(self, object_id, ip_addresses, device):
-        """Clean unused ip from object. ip addresses is list of IP addresses configured on device (device) on host (object_id)"""
-
-        sql = "SELECT INET_NTOA(ip) FROM IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
-
-        result = self.db_query_all(sql)
-
-        if result is not None:
-            old_ips = result
-            delete_ips = []
-
-            for old_ip in old_ips:
-                try:
-                    test = ip_addresses.index(old_ip[0])
-                except ValueError:
-                    delete_ips.append(old_ip[0])
-        if len(delete_ips) != 0:
-            for ip in delete_ips:
-                sql = "DELETE FROM IPv4Allocation WHERE ip = INET_ATON('%s') AND object_id = %d AND name = '%s'" % (ip, object_id, device)
-                self.db_insert(sql)
-                logstring = "Removed IP %s from %s" % (ip, device)
-                self.InsertLog(object_id, logstring)
-
-    def CleanIPv6Addresses(self, object_id, ip_addresses, device):
-        """Clean unused ipv6 from object. ip_addresses mus be list of active IP addresses on device (device) on host (object_id)"""
-
-        sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
-        result = self.db_query_all(sql)
-
-        if result is not None:
-            old_ips = result
-            delete_ips = []
-            new_ip6_ips = []
-
-            # We must prepare ipv6 addresses into same format for compare
-            for new_ip in ip_addresses:
-                converted = ipaddress.IPv6Address(new_ip).exploded.lower()
-                new_ip6_ips.append(converted)
-
-            for old_ip_hex in old_ips:
-                try:
-                    # First we must construct IP from HEX
-                    tmp = re.sub("(.{4})", "\\1:", old_ip_hex[0], re.DOTALL)
-                    # Remove last : and lower string
-                    old_ip = tmp[:len(tmp) - 1].lower()
-
-                    test = new_ip6_ips.index(old_ip)
-
-                except ValueError:
-                    delete_ips.append(old_ip)
-
-        if len(delete_ips) != 0:
-            for ip in delete_ips:
-                db_ip6_format = "".join(str(x) for x in ip.split(':'))
-                sql = "DELETE FROM IPv6Allocation WHERE ip = UNHEX('%s') AND object_id = %d AND name = '%s'" % (db_ip6_format, object_id, device)
-                self.db_insert(sql)
-                logstring = "Removed IP %s from %s" % (ip, device)
-                self.InsertLog(object_id, logstring)
 
     def LinkVirtualHypervisor(self, object_id, virtual_id):
         """Assign virtual server to correct hypervisor"""
@@ -1100,3 +757,369 @@ class RTObject:
         """Get list of all server chassis IDs"""
         sql = "SELECT id FROM Object WHERE objtype_id = 1502"
         return self.db_query_all(sql)
+
+    #
+    # Networks methots
+    #
+    def GetIpv4Networks(self):
+        """Get All IPV4 Networks"""
+        sql = "SELECT id, INET_NTOA(ip), mask, name FROM IPv4Network"
+
+        return self.db_query_all(sql)
+
+    def GetIpv6Networks(self):
+        """Get All IPV6 Networks"""
+        sql = "SELECT id, HEX(ip), mask, name FROM IPv6Network"
+
+        return self.db_query_all(sql)
+
+    def GetIpv4Allocations(self):
+        """Get IPv4 Allocations for specific network"""
+        sql = "SELECT INET_NTOA(ip), object_id, name AS int_name, Null AS name, Null AS comment from IPv4Allocation UNION SELECT INET_NTOA(ip), Null AS object_id, Null AS int_name, name, comment FROM IPv4Address"
+
+        return self.db_query_all(sql)
+
+    def GetIpv6Allocations(self):
+        """Get IPv6 Allocations for specific network"""
+        sql = "SELECT HEX(ip), object_id, name AS int_name, Null AS name, Null AS comment from IPv6Allocation UNION SELECT HEX(ip), Null AS object_id, Null AS int_name, name, comment FROM IPv6Address"
+
+        return self.db_query_all(sql)
+
+    def SetIPComment(self, comment, ip):
+        """ Set comment for IP address """
+        sql = "SELECT comment FROM IPv4Address WHERE INET_NTOA(ip) = '%s'" % (ip)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            sql = "UPDATE IPv4Address SET comment = '%s' WHERE INET_NTOA(ip) = '%s'" % (comment, ip)
+        else:
+            sql = "INSERT INTO IPv4Address (ip, comment) VALUES (INET_ATON('%s'), '%s')" % (ip, comment)
+
+        self.db_insert(sql)
+
+    def SetIPName(self, name, ip):
+        """ Set name for IP address """
+        sql = "SELECT name FROM IPv4Address WHERE INET_NTOA(ip) = '%s'" % (ip)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            sql = "UPDATE IPv4Address SET name = '%s' WHERE INET_NTOA(ip) = '%s'" % (name, ip)
+        else:
+            sql = "INSERT INTO IPv4Address (ip, name) VALUES (INET_ATON('%s'), '%s')" % (ip, name)
+
+        self.db_insert(sql)
+
+    def FindIPFromComment(self, comment, network_name):
+        """Find IP address based on comment"""
+        # Get Network information
+        sql = "SELECT ip,mask from IPv4Network WHERE name = '%s'" % (network_name)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            ip_int = result[0]
+            ip_mask = result[1]
+            ip_int_max = (2 ** (32 - ip_mask)) + ip_int
+
+            sql = "SELECT INET_NTOA(ip) FROM IPv4Address WHERE ip >= %d AND ip <= %d and comment = '%s'" % (ip_int, ip_int_max, comment)
+
+            result = self.db_query_all(sql)
+            if result is not None:
+                return "\n".join(str(x[0]) + "/" + str(ip_mask) for x in result)
+            else:
+                return False
+
+        else:
+            return False
+
+    def SetIP6Comment(self, comment, ip):
+        """ Set comment for IPv6 address """
+
+        # Create address object using ipaddr
+        addr6 = ipaddress.IPv6Address(ip)
+        # Create IPv6 format for Mysql
+        db_ip6_format = "".join(str(x) for x in addr6.exploded.split(':')).upper()
+
+        sql = "SELECT comment FROM IPv6Address WHERE HEX(ip) = '%s'" % (db_ip6_format)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            sql = "UPDATE IPv6Address SET comment = '%s' WHERE HEX(ip) = '%s'" % (comment, db_ip6_format)
+        else:
+            sql = "INSERT INTO IPv6Address (ip, comment) VALUES (UNHEX('%s'), '%s')" % (db_ip6_format, comment)
+
+        self.db_insert(sql)
+
+    def FindIPv6FromComment(self, comment, network_name):
+        """Find IP address based on comment"""
+        sql = "SELECT HEX(ip),mask,hex(last_ip) from IPv6Network WHERE name = '%s'" % (network_name)
+        result = self.db_query_one(sql)
+
+        if result is not None:
+            ip = result[0]
+            ip_mask = result[1]
+            ip_max = result[2]
+
+            sql = "select HEX(ip) from IPv6Address where ip between UNHEX('%s') AND UNHEX('%s') AND comment = '%s';" % (ip, ip_max, comment)
+
+            result = self.db_query_all(sql)
+            if result is not None:
+                return "\n".join(str(re.sub(r'(.{4})(?=.)', r'\1:', x[0]).lower()) + "/" + str(ip_mask) for x in result)
+            else:
+                return False
+
+        else:
+            return False
+
+    def CleanIPAddresses(self, object_id, ip_addresses, device):
+        """Clean unused ip from object. ip addresses is list of IP addresses configured on device (device) on host (object_id)"""
+
+        sql = "SELECT INET_NTOA(ip) FROM IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
+
+        result = self.db_query_all(sql)
+
+        if result is not None:
+            old_ips = result
+            delete_ips = []
+
+            for old_ip in old_ips:
+                try:
+                    ip_addresses.index(old_ip[0])
+                except ValueError:
+                    delete_ips.append(old_ip[0])
+        if len(delete_ips) != 0:
+            for ip in delete_ips:
+                sql = "DELETE FROM IPv4Allocation WHERE ip = INET_ATON('%s') AND object_id = %d AND name = '%s'" % (ip, object_id, device)
+                self.db_insert(sql)
+                logstring = "Removed IP %s from %s" % (ip, device)
+                self.InsertLog(object_id, logstring)
+
+    def CleanIPv6Addresses(self, object_id, ip_addresses, device):
+        """Clean unused ipv6 from object. ip_addresses mus be list of active IP addresses on device (device) on host (object_id)"""
+
+        sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
+        result = self.db_query_all(sql)
+
+        if result is not None:
+            old_ips = result
+            delete_ips = []
+            new_ip6_ips = []
+
+            # We must prepare ipv6 addresses into same format for compare
+            for new_ip in ip_addresses:
+                converted = ipaddress.IPv6Address(new_ip).exploded.lower()
+                new_ip6_ips.append(converted)
+
+            for old_ip_hex in old_ips:
+                try:
+                    # First we must construct IP from HEX
+                    tmp = re.sub("(.{4})", "\\1:", old_ip_hex[0], re.DOTALL)
+                    # Remove last : and lower string
+                    old_ip = tmp[:len(tmp) - 1].lower()
+
+                    new_ip6_ips.index(old_ip)
+
+                except ValueError:
+                    delete_ips.append(old_ip)
+
+        if len(delete_ips) != 0:
+            for ip in delete_ips:
+                db_ip6_format = "".join(str(x) for x in ip.split(':'))
+                sql = "DELETE FROM IPv6Allocation WHERE ip = UNHEX('%s') AND object_id = %d AND name = '%s'" % (db_ip6_format, object_id, device)
+                self.db_insert(sql)
+                logstring = "Removed IP %s from %s" % (ip, device)
+                self.InsertLog(object_id, logstring)
+    
+    def CheckIfIp4IPExists(self, ip):
+        """Check if ipv4 record exist in database"""
+        sql = "select ip from IPv4Address where ip = INET_ATON('%s')" % (ip)
+        if self.db_query_one(sql) is None:
+            sql = "select ip from IPv4Allocation where ip = INET_ATON('%s')" % (ip)
+            if self.db_query_one(sql) is None:
+                return False
+            else:
+                return True
+        else:
+            return True
+
+    def LinkNetworkInterface(self, object_id, interface, switch_name, interface_switch):
+        """Link two devices togetger"""
+        # Get interface id
+        port_id = self.GetInterfaceId(object_id, interface)
+        if port_id is not None:
+            # Get switch object ID
+            switch_object_id = self.GetObjectId(switch_name)
+            if switch_object_id is not None:
+                switch_port_id = self.GetInterfaceId(switch_object_id, interface_switch)
+                if switch_port_id is not None:
+                    if switch_port_id > port_id:
+                        select_object = 'portb'
+                    else:
+                        select_object = 'porta'
+
+                    # Check server interface, update or create new link
+                    sql = "SELECT %s FROM Link WHERE porta = %d OR portb = %d" % (select_object, port_id, port_id)
+                    result = self.db_query_one(sql)
+                    if result is None:
+                        # Check if switch port is connected to another server
+                        sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                        result = self.db_query_one(sql)
+                        if result is not None:
+                            # Get ports id of old link
+                            old_link_a, old_link_b = result
+                            old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
+                            old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
+
+                            # Clean switchport connection
+                            sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (switch_port_id, switch_port_id)
+                            self.db_insert(sql)
+
+                            # Log message to both device
+                            text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
+                            self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
+                            self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
+
+                        # Insert new connection
+                        sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (port_id, switch_port_id)
+                        self.db_insert(sql)
+                        resolution = True
+
+                        # Log it to both devices
+                        device_dict = self.GetPortDeviceNameById(port_id)
+                        switch_dict = self.GetPortDeviceNameById(switch_port_id)
+                        text = "New connection %s,%s with %s,%s" % (device_dict['device_name'], device_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
+                        self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
+                        self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
+                    else:
+                        # Update old connection
+                        old_switch_port_id = result[0]
+                        if old_switch_port_id != switch_port_id:
+                            # Clean previous link first
+                            # Check and clean previous link (port_id)
+                            sql = "SELECT porta,portb FROM Link WHERE porta = %d OR portb = %d" % (port_id, port_id)
+                            result = self.db_query_one(sql)
+                            if result is not None:
+                                # Get ports id of old link
+                                old_link_a, old_link_b = result
+                                old_link_a_dict = self.GetPortDeviceNameById(old_link_a)
+                                old_link_b_dict = self.GetPortDeviceNameById(old_link_b)
+
+                                # Clean switchport connection
+                                sql = "DELETE FROM Link WHERE porta = %d OR portb = %d" % (port_id, port_id)
+                                self.db_insert(sql)
+
+                                # Log message to both device
+                                text = "Disconnected %s,%s from %s,%s" % (old_link_a_dict['device_name'], old_link_a_dict['port_name'], old_link_b_dict['device_name'], old_link_b_dict['port_name'])
+                                self.InsertLog(self.GetObjectId(old_link_a_dict['device_name']), text)
+                                self.InsertLog(self.GetObjectId(old_link_b_dict['device_name']), text)
+
+                            # Insert new connection
+                            sql = "INSERT INTO Link (porta,portb) VALUES (%d,%d)" % (switch_port_id, port_id)
+                            self.db_insert(sql)
+
+                            # Log all three devices
+                            old_switch_dict = self.GetPortDeviceNameById(old_switch_port_id)
+                            switch_dict = self.GetPortDeviceNameById(switch_port_id)
+                            device_dict = self.GetPortDeviceNameById(port_id)
+                            text = "Update connection from %s,%s to %s,%s" % (old_switch_dict['device_name'], old_switch_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
+                            self.InsertLog(self.GetObjectId(device_dict['device_name']), text)
+
+                            text = "%s,%s changed connection from %s,%s and connected to %s,%s" % (device_dict['device_name'], device_dict['port_name'], old_switch_dict['device_name'], old_switch_dict['port_name'], switch_dict['device_name'], switch_dict['port_name'])
+                            self.InsertLog(self.GetObjectId(old_switch_dict['device_name']), text)
+                            self.InsertLog(self.GetObjectId(switch_dict['device_name']), text)
+
+                            resolution = True
+                        resolution = None
+
+                else:
+                    resolution = None
+            else:
+                resolution = None
+
+        else:
+            resolution = None
+
+        return resolution
+
+    def ObjectGetIpv4IPList(self,object_id):
+        ''' Get list of IPv4 IP from object '''
+        sql = "SELECT INET_NTOA(ip) AS ip from IPv4Allocation where object_id = %i" % (object_id)
+        return self.db_query_all(sql)
+
+    def ObjectGetIpv6IPList(self,object_id):
+        ''' Get list of IPv6 IP from object '''
+        sql = "SELECT HEX(ip) AS ip from IPv6Allocation where object_id = %i" % (object_id)
+        return self.db_query_all(sql)
+
+    def InterfaceGetIpv4IP(self, object_id, interface):
+        """ Get list of IPv4 IP from interface """
+        sql = "SELECT INET_NTOA(ip) AS ip from IPv4Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
+        return self.db_query_all(sql)
+
+    def InterfaceGetIpv6IP(self, object_id, interface):
+        """ Get list of IPv6 IP from interface """
+        sql = "SELECT HEX(ip) AS ip from IPv6Allocation where object_id = %i AND name = '%s'" % (object_id, interface)
+        return self.db_query_all(sql)
+
+    def InterfaceAddIpv4IP(self, object_id, device, ip):
+        """Add/Update IPv4 IP on interface"""
+
+        sql = "SELECT INET_NTOA(ip) from IPv4Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
+        result = self.db_query_all(sql)
+
+        if result is not None:
+            old_ips = result
+
+        is_there = "no"
+
+        for old_ip in old_ips:
+            if old_ip[0] == ip:
+                is_there = "yes"
+
+        if is_there == "no":
+            sql = "SELECT name FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
+            result = self.db_query_all(sql)
+
+            if result is not None:
+                if result != ():
+                    sql = "DELETE FROM IPv4Allocation WHERE object_id = %d AND ip = INET_ATON('%s')" % (object_id, ip)
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
+
+            sql = "INSERT INTO IPv4Allocation (object_id,ip,name) VALUES (%d,INET_ATON('%s'),'%s')" % (object_id, ip, device)
+            self.db_insert(sql)
+            text = "Added IP %s on %s" % (ip, device)
+            self.InsertLog(object_id, text)
+
+    def InterfaceAddIpv6IP(self, object_id, device, ip):
+        """Add/Update IPv6 IP on interface"""
+        # Create address object using ipaddress
+        addr6 = ipaddress.IPv6Address(ip)
+        # Create IPv6 format for Mysql
+        ip6 = "".join(str(x) for x in addr6.exploded.split(':')).upper()
+
+        sql = "SELECT HEX(ip) FROM IPv6Allocation WHERE object_id = %d AND name = '%s'" % (object_id, device)
+        result = self.db_query_all(sql)
+
+        if result is not None:
+            old_ips = result
+
+        is_there = "no"
+
+        for old_ip in old_ips:
+            if old_ip[0] == ip6:
+                is_there = "yes"
+
+        if is_there == "no":
+            sql = "SELECT name FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip6)
+            result = self.db_query_all(sql)
+
+            if result is not None:
+                if result != ():
+                    sql = "DELETE FROM IPv6Allocation WHERE object_id = %d AND ip = UNHEX('%s')" % (object_id, ip6)
+                    self.db_insert(sql)
+                    self.InsertLog(object_id, "Removed IP (%s) from interface %s" % (ip, result[0][0]))
+
+            sql = "INSERT INTO IPv6Allocation (object_id,ip,name) VALUES (%d,UNHEX('%s'),'%s')" % (object_id, ip6, device)
+            self.db_insert(sql)
+            text = "Added IPv6 IP %s on %s" % (ip, device)
+            self.InsertLog(object_id, text)
