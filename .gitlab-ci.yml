@@ -3,7 +3,7 @@ stages:
     - build
     - publish
 
-Test (Python 2.7):
+Test (Python 3.6):
     stage: test
     allow_failure: false
     only:
@@ -11,7 +11,7 @@ Test (Python 2.7):
     services:
     - name: registry.gitlab.com/rvojcik/rtapi/test/rtdb:0.21.1
       alias: rtdb      
-    image: python:2.7-stretch
+    image: python:3.6-buster
     script:
         - pip install -r requirements.txt
         - python setup.py install
@@ -35,18 +35,21 @@ Test (Python 3.7):
         - coverage run --source rtapi -m py.test
         - coverage report
 
-build_python2:
-    stage: build
+Test (Python 3.8):
+    stage: test
     allow_failure: false
     only:
-        - tags
-    image: python:2.7-stretch
+        - master
+    services:
+    - name: registry.gitlab.com/rvojcik/rtapi/test/rtdb:0.21.1
+      alias: rtdb      
+    image: python:3.8-buster
     script:
-        - pip install --upgrade setuptools wheel
-        - python setup.py sdist bdist_wheel
-    artifacts:
-        paths:
-            - dist/
+        - pip install -r requirements.txt
+        - python setup.py install
+        - pip install -r tests/requirements.txt
+        - coverage run --source rtapi -m py.test
+        - coverage report
 
 build_python3:
     stage: build
