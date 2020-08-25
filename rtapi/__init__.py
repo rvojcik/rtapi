@@ -228,6 +228,22 @@ class RTObject:
 
         return result
 
+    def GetObjectsByTag(self, tag_name):
+        """Get Array of objects from Racktables database by Tag name"""
+
+        sql = "SELECT t1.name, \
+               t1.id \
+               FROM Object AS t1 \
+               JOIN \
+               TagStorage AS t2 \
+               ON t1.id = t2.entity_id \
+               JOIN \
+               TagTree AS t3 \
+               ON t2.tag_id = t3.id \
+               WHERE t3.tag = '%s'" % (str(tag_name))
+
+        return self.db_query_all(sql)
+
     def GetObjectId(self, name):
         """Translate Object name to object id"""
         # Get interface id
