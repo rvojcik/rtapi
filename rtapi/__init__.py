@@ -656,7 +656,7 @@ class RTObject:
     def GetObjectAttributes(self, object_id):
         """Get list of Object attributes"""
 
-        sql = "SELECT select ob.id, \
+        sql = "SELECT ob.id, \
                ob.name AS routerName, \
                ob.label, \
                a.name AS attrName, \
