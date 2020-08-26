@@ -8,6 +8,7 @@ Test (Python 3.6):
     allow_failure: false
     only:
         - master
+        - tags
     services:
     - name: registry.gitlab.com/rvojcik/rtapi/test/rtdb:0.21.1
       alias: rtdb      
@@ -24,6 +25,7 @@ Test (Python 3.7):
     allow_failure: false
     only:
         - master
+        - tags
     services:
     - name: registry.gitlab.com/rvojcik/rtapi/test/rtdb:0.21.1
       alias: rtdb      
@@ -40,6 +42,7 @@ Test (Python 3.8):
     allow_failure: false
     only:
         - master
+        - tags
     services:
     - name: registry.gitlab.com/rvojcik/rtapi/test/rtdb:0.21.1
       alias: rtdb      
