@@ -61,6 +61,8 @@ build_python3:
         - tags
     image: python:3.6
     script:
+        - sed -i "s/###VERSION###/$CI_COMMIT_TAG/g" ./rtapi/__init__.py 
+        - sed -i "s/###VERSION###/$CI_COMMIT_TAG/g" ./setup.py 
         - pip install --upgrade setuptools wheel
         - python setup.py sdist bdist_wheel
     artifacts:
