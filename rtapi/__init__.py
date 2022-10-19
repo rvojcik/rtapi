@@ -142,7 +142,14 @@ class RTObject:
 
     def AddObject(self, name, server_type_id, asset_no, label):
         """Add new object to racktables"""
-        sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,'%s','%s')" % (name, server_type_id, asset_no, label)
+        if asset_no and label:
+          sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,'%s','%s')" % (name, server_type_id, asset_no, label)
+        elif asset_no:
+          sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,'%s',NULL)" % (name, server_type_id, asset_no)
+        elif label:
+          sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,NULL,'%s')" % (name, server_type_id, label)
+        else:
+          sql = "INSERT INTO Object (name,objtype_id,asset_no,label) VALUES ('%s',%d,NULL,NULL)" % (name, server_type_id)
         self.db_insert(sql)
         return self.db_fetch_lastid()
 
